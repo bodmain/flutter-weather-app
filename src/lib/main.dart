@@ -1,121 +1,213 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'screens/home_screen.dart';
+import 'screens/search_screen.dart';
+import 'screens/alert_screen.dart';
+import 'theme/app_theme.dart';
+import 'models/weather_model.dart';
 
 void main() {
-  runApp(const MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  runApp(const WeatherApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class WeatherApp extends StatelessWidget {
+  const WeatherApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      title: 'WeatherNow',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.darkTheme,
+      home: const MainShell(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
+class MainShell extends StatefulWidget {
+  const MainShell({super.key});
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<MainShell> createState() => _MainShellState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _MainShellState extends State<MainShell> with SingleTickerProviderStateMixin {
+  int _idx = 0;
+  late AnimationController _navAnim;
+  WeatherInfo _selectedWeather = WeatherData.hanoi;
 
-  void _incrementCounter() {
+  @override
+  void initState() {
+    super.initState();
+    _navAnim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    )..value = 1;
+    _updateSystemUI();
+  }
+
+  void _updateSystemUI() {
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: _selectedWeather.isNight ? Brightness.light : Brightness.dark,
+      systemNavigationBarColor: _selectedWeather.isNight ? AppColors.bg0 : AppColors.dayBg1,
+      systemNavigationBarIconBrightness: _selectedWeather.isNight ? Brightness.light : Brightness.dark,
+    ));
+  }
+
+  void _onTap(int index) {
+    if (index == _idx) return;
+    HapticFeedback.selectionClick();
+    setState(() => _idx = index);
+    _navAnim.forward(from: 0);
+  }
+
+  void _updateCity(WeatherInfo city) {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _selectedWeather = city;
+      _idx = 0; 
     });
+    _updateSystemUI();
+    _navAnim.forward(from: 0);
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    final isNight = _selectedWeather.isNight;
+    
+    final screens = [
+      HomeScreen(weather: _selectedWeather), 
+      SearchScreen(onCitySelected: _updateCity, isNight: isNight), 
+      AlertScreen(isNight: isNight)
+    ];
+
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+      backgroundColor: isNight ? AppColors.bg0 : AppColors.dayBg0,
+      extendBody: true,
+      body: IndexedStack(
+        index: _idx,
+        children: screens,
       ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
+      bottomNavigationBar: _buildNav(isNight),
+    );
+  }
+
+  Widget _buildNav(bool isNight) {
+    final labels = ['Trang chủ', 'Tìm kiếm', 'Thông báo'];
+    final icons = [
+      (CupertinoIcons.house, CupertinoIcons.house_fill),
+      (CupertinoIcons.search, CupertinoIcons.search),
+      (CupertinoIcons.bell, CupertinoIcons.bell_fill),
+    ];
+
+    return ClipRRect(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        decoration: BoxDecoration(
+          color: (isNight ? AppColors.bg0 : Colors.white).withValues(alpha: 0.95),
+          border: Border(
+            top: BorderSide(color: isNight ? AppColors.glassBorder : Colors.black12, width: 0.5),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            )
+          ],
+        ),
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            height: 68,
+            child: Row(
+              children: List.generate(3, (i) => Expanded(
+                child: _NavItem(
+                  icon: icons[i].$1,
+                  activeIcon: icons[i].$2,
+                  label: labels[i],
+                  isActive: _idx == i,
+                  isNight: isNight,
+                  onTap: () => _onTap(i),
+                ),
+              )),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatefulWidget {
+  final IconData icon;
+  final IconData activeIcon;
+  final String label;
+  final bool isActive;
+  final bool isNight;
+  final VoidCallback onTap;
+
+  const _NavItem({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+    required this.isActive,
+    required this.isNight,
+    required this.onTap,
+  });
+
+  @override
+  State<_NavItem> createState() => _NavItemState();
+}
+
+class _NavItemState extends State<_NavItem> with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 150));
+    _scale = Tween<double>(begin: 1.0, end: 0.9).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+  }
+
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    final activeColor = widget.isNight ? AppColors.accent : Colors.blue.shade800;
+    final inactiveColor = widget.isNight ? AppColors.text3 : Colors.black38;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) => _ctrl.forward(),
+      onTapUp: (_) { _ctrl.reverse(); widget.onTap(); },
+      onTapCancel: () => _ctrl.reverse(),
+      child: ScaleTransition(
+        scale: _scale,
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text('You have pushed the button this many times:'),
+            Icon(
+              widget.isActive ? widget.activeIcon : widget.icon,
+              color: widget.isActive ? activeColor : inactiveColor,
+              size: 24,
+            ),
+            const SizedBox(height: 4),
             Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+              widget.label,
+              style: GoogleFonts.nunito(
+                fontSize: 10,
+                fontWeight: widget.isActive ? FontWeight.w800 : FontWeight.w600,
+                color: widget.isActive ? activeColor : inactiveColor,
+              ),
             ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
       ),
     );
   }

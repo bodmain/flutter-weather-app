@@ -8,23 +8,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:src/main.dart';
+import 'package:weather_app/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('Kiểm tra hiển thị tên thành phố mặc định', (WidgetTester tester) async {
+    // 1. Chạy app
+    await tester.pumpWidget(const WeatherApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // 2. Kiểm tra xem có thấy chữ "Hà Nội" trên màn hình không
+    expect(find.text('Hà Nội'), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // 3. Kiểm tra xem có icon địa điểm không
+    expect(find.byIcon(Icons.location_on_rounded), findsOneWidget);
   });
 }
