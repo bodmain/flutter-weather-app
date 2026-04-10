@@ -10,21 +10,14 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-
-  # Fonts chuẩn đẹp
   google_fonts: ^6.2.1
-
-  # HTTP
   http: ^1.2.1
-
-  # State management
   provider: ^6.1.2
-
-  # Local storage
   shared_preferences: ^2.2.3
-
-  # Haptic / vibration
   flutter_vibrate: ^1.3.0
+  google_generative_ai: ^0.4.7
+  # Thêm GetX để quản lý trạng thái
+  get: ^4.6.6
 
 dev_dependencies:
   flutter_test:

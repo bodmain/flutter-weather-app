@@ -86,30 +86,57 @@ class WeatherInfo {
     this.isNight = false,
   });
 
+  factory WeatherInfo.fromJson(Map<String, dynamic> json) {
+    final main = json['main'];
+    final weather = json['weather'][0];
+    final sys = json['sys'];
+    final wind = json['wind'];
+    final dt = json['dt'] as int;
+    final sunrise = sys['sunrise'] as int;
+    final sunset = sys['sunset'] as int;
+
+    return WeatherInfo(
+      cityName: json['name'],
+      country: sys['country'],
+      temperature: (main['temp'] as num).toDouble(),
+      feelsLike: (main['feels_like'] as num).toDouble(),
+      tempMin: (main['temp_min'] as num).toDouble(),
+      tempMax: (main['temp_max'] as num).toDouble(),
+      humidity: main['humidity'] as int,
+      windSpeed: (wind['speed'] as num).toDouble(),
+      uvIndex: 0, // OpenWeather 2.5 free basic doesn't have UV
+      description: weather['description'],
+      condition: _mapMainToCondition(weather['main'], weather['id']),
+      isNight: dt < sunrise || dt >= sunset,
+    );
+  }
+
+  static WeatherCondition _mapMainToCondition(String main, int id) {
+    if (id >= 200 && id < 300) return WeatherCondition.thunderstorm;
+    if (id >= 300 && id < 600) return WeatherCondition.heavyRain;
+    if (id >= 600 && id < 700) return WeatherCondition.lightRain;
+    if (id >= 700 && id < 800) return WeatherCondition.fog;
+    if (id == 800) return WeatherCondition.sunny;
+    if (id == 801) return WeatherCondition.partlyCloudy;
+    return WeatherCondition.cloudy;
+  }
+
   // 🧠 Logic Lời khuyên thông minh
   List<(IconData, String, Color)> get smartTips {
     final List<(IconData, String, Color)> tips = [];
 
-    // 1. Kiểm tra UV
-    if (uvIndex >= 6) {
-      tips.add((CupertinoIcons.sun_dust_fill, "UV đang rất cao, bạn nhớ mang theo kem chống nắng nhé!", const Color(0xFFFFB74D)));
-    }
-
-    // 2. Kiểm tra Nhiệt độ
     if (temperature >= 32) {
       tips.add((CupertinoIcons.drop_fill, "Trời khá nóng, hãy uống đủ nước và hạn chế ra ngoài lâu.", const Color(0xFF64B5F6)));
     } else if (temperature <= 18) {
       tips.add((CupertinoIcons.snow, "Trời lạnh rồi, nhớ mặc áo ấm để bảo vệ sức khỏe bạn nhé.", const Color(0xFF81D4FA)));
     }
 
-    // 3. Kiểm tra Mưa dựa trên điều kiện hiện tại
     if (condition == WeatherCondition.heavyRain || condition == WeatherCondition.thunderstorm) {
       tips.add((CupertinoIcons.umbrella_fill, "Đang có mưa lớn, bạn nên hạn chế di chuyển ngoài đường.", const Color(0xFFEF5350)));
     } else if (condition == WeatherCondition.lightRain) {
       tips.add((CupertinoIcons.umbrella, "Trời có mưa nhỏ, đừng quên mang theo ô khi ra ngoài.", const Color(0xFF90CAF9)));
     }
 
-    // 4. Nếu không có điều kiện đặc biệt, đưa ra lời khuyên chung
     if (tips.isEmpty) {
       tips.add((CupertinoIcons.heart_fill, "Thời tiết hôm nay rất tuyệt, chúc bạn một ngày tốt lành!", const Color(0xFF81C784)));
     }

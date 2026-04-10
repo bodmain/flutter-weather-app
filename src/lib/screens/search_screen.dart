@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
+ import 'package:get/get.dart';
 import '../theme/app_theme.dart';
 import '../models/weather_model.dart';
 import '../widgets/glass_card.dart';
@@ -30,7 +31,7 @@ class _SearchScreenState extends State<SearchScreen>
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller.onClose();
     super.dispose();
   }
 
@@ -84,33 +85,36 @@ class _SearchScreenState extends State<SearchScreen>
       child: TextField(
         controller: _controller.textCtrl,
         focusNode: _controller.focusNode,
-        onChanged: (_) => setState(() {}),
+        onChanged: _controller.onTextChanged,
         style: GoogleFonts.nunito(
           color: textColor, fontSize: 15, fontWeight: FontWeight.w700,
         ),
         decoration: InputDecoration(
           filled: true,
           fillColor: isNight ? AppColors.glass : Colors.white.withValues(alpha: 0.4),
-          hintText: 'Nhập tên thành phố...',
+          hintText: 'Nhập tên thành phố (ví dụ: Tokyo, Paris...)',
           hintStyle: GoogleFonts.nunito(color: hintColor, fontWeight: FontWeight.w500),
-          prefixIcon: Icon(CupertinoIcons.search, 
-            color: isNight ? AppColors.accent : AppColors.bg0.withValues(alpha: 0.6), size: 22),
-          suffixIcon: _controller.hasText
-              ? TapScale(
-                  onTap: () {
-                    _controller.clearSearch();
-                    setState(() {});
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: isNight ? AppColors.text3 : AppColors.bg0.withValues(alpha: 0.3), 
-                      shape: BoxShape.circle
-                    ),
-                    child: Icon(CupertinoIcons.xmark, size: 13, color: isNight ? AppColors.bg0 : Colors.white),
-                  ),
-                )
-              : null,
+          prefixIcon: Obx(() => _controller.isSearching.value 
+            ? const Padding(
+                padding: EdgeInsets.all(12.0),
+                child: CupertinoActivityIndicator(radius: 8),
+              )
+            : Icon(CupertinoIcons.search, 
+                color: isNight ? AppColors.accent : AppColors.bg0.withValues(alpha: 0.6), size: 22)),
+          suffixIcon: GestureDetector(
+            onTap: () {
+              _controller.clearSearch();
+              setState(() {});
+            },
+            child: Container(
+              margin: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: isNight ? AppColors.text3 : AppColors.bg0.withValues(alpha: 0.3), 
+                shape: BoxShape.circle
+              ),
+              child: Icon(CupertinoIcons.xmark, size: 13, color: isNight ? AppColors.bg0 : Colors.white),
+            ),
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(50),
             borderSide: BorderSide(
@@ -138,90 +142,85 @@ class _SearchScreenState extends State<SearchScreen>
   }
 
   Widget _buildLabel() {
-    final label = _controller.hasText
-        ? (_controller.results.isEmpty ? 'Không tìm thấy' : 'Kết quả (${_controller.results.length})')
-        : 'Thành phố gợi ý';
-    
-    final labelColor = widget.isNight ? AppColors.text3 : AppColors.bg0.withValues(alpha: 0.6);
+    return Obx(() {
+      final label = _controller.textCtrl.text.isNotEmpty
+          ? (_controller.results.isEmpty ? 'Không tìm thấy' : 'Kết quả (${_controller.results.length})')
+          : (ctrl.SearchController.history.isNotEmpty ? 'Tìm kiếm gần đây' : 'Thành phố gợi ý');
+      
+      final labelColor = widget.isNight ? AppColors.text3 : AppColors.bg0.withValues(alpha: 0.6);
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(22, 0, 22, 10),
-      child: Text(
-        label.toUpperCase(),
-        style: GoogleFonts.nunito(
-          fontSize: 10, fontWeight: FontWeight.w800,
-          color: labelColor,
-          letterSpacing: 1.5,
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(22, 0, 22, 10),
+        child: Text(
+          label.toUpperCase(),
+          style: GoogleFonts.nunito(
+            fontSize: 10, fontWeight: FontWeight.w800,
+            color: labelColor,
+            letterSpacing: 1.5,
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   Widget _buildList() {
-    if (_controller.results.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(CupertinoIcons.globe, size: 64, color: widget.isNight ? AppColors.text3 : AppColors.bg0.withValues(alpha: 0.3)),
-            const SizedBox(height: 14),
-            Text('Không tìm thấy thành phố', 
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: widget.isNight ? AppColors.text1 : AppColors.bg0,
-                fontWeight: FontWeight.w600
-              )),
-          ],
-        ),
-      );
-    }
+    return Obx(() {
+      if (_controller.results.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(CupertinoIcons.globe, size: 64, color: widget.isNight ? AppColors.text3 : AppColors.bg0.withValues(alpha: 0.3)),
+              const SizedBox(height: 14),
+              Text('Không tìm thấy thành phố', 
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: widget.isNight ? AppColors.text1 : AppColors.bg0,
+                  fontWeight: FontWeight.w600
+                )),
+            ],
+          ),
+        );
+      }
 
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      physics: const BouncingScrollPhysics(),
-      itemCount: _controller.results.length,
-      itemBuilder: (ctx, i) {
-        final delay = (i * 0.06).clamp(0.0, 0.5);
-        final itemAnim = Tween<double>(begin: 0, end: 1).animate(
-          CurvedAnimation(
-            parent: _controller.listCtrl,
-            curve: Interval(delay, delay + 0.4, curve: Curves.easeOut),
-          ),
-        );
-        return FadeTransition(
-          opacity: itemAnim,
-          child: SlideTransition(
-            position: Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero).animate(
-              CurvedAnimation(parent: _controller.listCtrl, curve: Interval(delay, delay + 0.4, curve: Curves.easeOutCubic)),
+      return ListView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        physics: const BouncingScrollPhysics(),
+        itemCount: _controller.results.length,
+        itemBuilder: (ctx, i) {
+          final delay = (i * 0.06).clamp(0.0, 0.5);
+          final itemAnim = Tween<double>(begin: 0, end: 1).animate(
+            CurvedAnimation(
+              parent: _controller.listCtrl,
+              curve: Interval(delay, delay + 0.4, curve: Curves.easeOut),
             ),
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: _tile(i),
+          );
+          return FadeTransition(
+            opacity: itemAnim,
+            child: SlideTransition(
+              position: Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero).animate(
+                CurvedAnimation(parent: _controller.listCtrl, curve: Interval(delay, delay + 0.4, curve: Curves.easeOutCubic)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _tile(_controller.results[i]),
+              ),
             ),
-          ),
-        );
-      },
-    );
+          );
+        },
+      );
+    });
   }
 
-  Widget _tile(int index) {
-    final city = _controller.results[index];
-    final isSelected = _controller.selectedIdx == index;
+  Widget _tile(WeatherInfo city) {
     final isNight = widget.isNight;
-
     final textColor = isNight ? AppColors.text1 : AppColors.bg0;
     final subColor = isNight ? AppColors.text2 : AppColors.bg0.withValues(alpha: 0.6);
 
     return GlassCard(
-      decoration: isSelected 
-        ? (isNight ? AppTheme.glassBoxHighlight() : _dayHighlightBox()) 
-        : (isNight ? AppTheme.glassBox() : _dayNormalBox()),
-      onTap: () {
-        _controller.selectCity(index);
-        setState(() {});
-      },
+      decoration: isNight ? AppTheme.glassBox() : _dayNormalBox(),
+      onTap: () => _controller.selectCity(city),
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
       child: Row(children: [
-        // HERO NGUỒN: Icon thời tiết trong list
         Hero(
           tag: 'weather-icon-${city.cityName}',
           child: SizedBox(
@@ -244,7 +243,7 @@ class _SearchScreenState extends State<SearchScreen>
             Text('${city.temperature.toInt()}°', 
               style: GoogleFonts.outfit(
                 fontSize: 22, fontWeight: FontWeight.w500, 
-                color: isSelected ? (isNight ? AppColors.accentLight : Colors.blue.shade900) : textColor, 
+                color: textColor, 
                 letterSpacing: -0.5
               )),
             Row(
@@ -266,14 +265,5 @@ class _SearchScreenState extends State<SearchScreen>
     color: Colors.white.withValues(alpha: 0.4),
     borderRadius: BorderRadius.circular(20),
     border: Border.all(color: Colors.white.withValues(alpha: 0.6), width: 1),
-  );
-
-  BoxDecoration _dayHighlightBox() => BoxDecoration(
-    color: Colors.white.withValues(alpha: 0.8),
-    borderRadius: BorderRadius.circular(20),
-    border: Border.all(color: Colors.blue.withValues(alpha: 0.2), width: 1.5),
-    boxShadow: [
-      BoxShadow(color: Colors.blue.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))
-    ]
   );
 }

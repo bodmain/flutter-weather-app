@@ -2,11 +2,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:get/get.dart';
 import '../theme/app_theme.dart';
 import '../models/weather_model.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/weather_painters.dart';
 import '../controllers/home_controller.dart';
+import '../controllers/weather_controller.dart';
+import '../widgets/ai_assistant_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   final WeatherInfo weather;
@@ -17,80 +20,98 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
-  late HomeController _controller;
+  late HomeController _homeController;
+  final WeatherController _weatherCtrl = Get.find<WeatherController>();
 
   @override
   void initState() {
     super.initState();
-    _controller = HomeController(vsync: this, weather: widget.weather);
-  }
-
-  @override
-  void didUpdateWidget(covariant HomeScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.weather.cityName != widget.weather.cityName) {
-      _controller.entryCtrl.forward(from: 0);
-    }
+    _homeController = HomeController(vsync: this, weather: widget.weather);
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _homeController.dispose();
     super.dispose();
   }
 
   Widget _staggered(int index, Widget child) {
     return FadeTransition(
-      opacity: _controller.fadeIns[index],
-      child: SlideTransition(position: _controller.slideIns[index], child: child),
+      opacity: _homeController.fadeIns[index],
+      child: SlideTransition(position: _homeController.slideIns[index], child: child),
+    );
+  }
+
+  void _showAIAssistant(WeatherInfo currentW) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => AIAssistantSheet(weather: currentW),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isNight = widget.weather.isNight;
-    
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      extendBodyBehindAppBar: true,
-      appBar: widget.isDetail ? AppBar(
+    return Obx(() {
+      // Ưu tiên dữ liệu từ API, nếu chưa có thì dùng dữ liệu demo
+      final w = _weatherCtrl.weather.value ?? widget.weather;
+      final isNight = w.isNight;
+      final isLoading = _weatherCtrl.isLoading.value;
+
+      return Scaffold(
         backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(CupertinoIcons.back, color: isNight ? Colors.white : AppColors.bg0),
-          onPressed: () => Navigator.pop(context),
+        extendBodyBehindAppBar: true,
+        appBar: widget.isDetail ? AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(CupertinoIcons.back, color: isNight ? Colors.white : AppColors.bg0),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ) : null,
+        floatingActionButton: isLoading ? null : Padding(
+          padding: const EdgeInsets.only(bottom: 80),
+          child: FloatingActionButton.extended(
+            onPressed: () => _showAIAssistant(w),
+            backgroundColor: AppColors.accent,
+            icon: const Icon(CupertinoIcons.sparkles, color: Colors.white),
+            label: Text('Hỏi AI', style: GoogleFonts.nunito(fontWeight: FontWeight.w800, color: Colors.white)),
+          ),
         ),
-      ) : null,
-      body: Container(
-        decoration: BoxDecoration(gradient: AppTheme.getScreenGradient(isNight)),
-        child: SafeArea(
-          bottom: false,
-          child: RefreshIndicator(
-            onRefresh: _controller.refreshWeather,
-            color: AppColors.accent,
-            backgroundColor: isNight ? AppColors.bg1 : Colors.white,
-            edgeOffset: 20,
-            child: CustomScrollView(
-              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-              slivers: [
-                SliverToBoxAdapter(child: _buildHero()),
-                SliverToBoxAdapter(child: _buildSmartTips()),
-                SliverToBoxAdapter(child: _buildInfoCards()),
-                SliverToBoxAdapter(child: _buildMinMaxBar()),
-                SliverToBoxAdapter(child: _buildHourlySection()),
-                const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                SliverToBoxAdapter(child: _build7DayForecast()),
-                const SliverToBoxAdapter(child: SizedBox(height: 120)),
-              ],
+        body: Container(
+          decoration: BoxDecoration(gradient: AppTheme.getScreenGradient(isNight)),
+          child: SafeArea(
+            bottom: false,
+            child: RefreshIndicator(
+              onRefresh: () => _weatherCtrl.fetchCurrentWeather(w.cityName),
+              color: AppColors.accent,
+              backgroundColor: isNight ? AppColors.bg1 : Colors.white,
+              edgeOffset: 20,
+              child: isLoading 
+                ? const Center(child: CupertinoActivityIndicator(radius: 15))
+                : CustomScrollView(
+                    physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                    slivers: [
+                      SliverToBoxAdapter(child: _buildHero(w)),
+                      SliverToBoxAdapter(child: _buildSmartTips(w)),
+                      SliverToBoxAdapter(child: _buildInfoCards(w)),
+                      SliverToBoxAdapter(child: _buildMinMaxBar(w)),
+                      SliverToBoxAdapter(child: _buildHourlySection()),
+                      const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                      SliverToBoxAdapter(child: _build7DayForecast()),
+                      const SliverToBoxAdapter(child: SizedBox(height: 120)),
+                    ],
+                  ),
             ),
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 
-  Widget _buildHero() {
-    final isNight = widget.weather.isNight;
+  Widget _buildHero(WeatherInfo w) {
+    final isNight = w.isNight;
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
       decoration: BoxDecoration(
@@ -105,13 +126,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       ),
       child: Column(
         children: [
-          _staggered(0, _buildCityHeader()),
+          _staggered(0, _buildCityHeader(w)),
           const SizedBox(height: 4),
           _staggered(1, StreamBuilder<DateTime>(
-            stream: _controller.timeStream,
-            initialData: _controller.now,
+            stream: _homeController.timeStream,
+            initialData: _homeController.now,
             builder: (context, snapshot) => Text(
-              _controller.getFormattedDate(snapshot.data!),
+              _homeController.getFormattedDate(snapshot.data!),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: isNight ? AppColors.text2 : AppColors.bg0.withValues(alpha: 0.7), 
                 fontWeight: isNight ? FontWeight.w400 : FontWeight.w600,
@@ -121,20 +142,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           )),
           const SizedBox(height: 24),
           Hero(
-            tag: 'weather-icon-${widget.weather.cityName}',
-            child: WeatherAnimation(condition: widget.weather.condition, size: 220),
+            tag: 'weather-icon-${w.cityName}',
+            child: WeatherAnimation(condition: w.condition, size: 220),
           ),
           const SizedBox(height: 12),
-          _staggered(3, _buildTempDisplay()),
+          _staggered(3, _buildTempDisplay(w)),
           const SizedBox(height: 6),
-          _staggered(4, _buildDescription()),
+          _staggered(4, _buildDescription(w)),
         ],
       ),
     );
   }
 
-  Widget _buildCityHeader() {
-    final isNight = widget.weather.isNight;
+  Widget _buildCityHeader(WeatherInfo w) {
+    final isNight = w.isNight;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -142,20 +163,20 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           color: isNight ? AppColors.accent : AppColors.bg0, size: 18),
         const SizedBox(width: 6),
         Text(
-          widget.weather.cityName, 
+          w.cityName, 
           style: Theme.of(context).textTheme.headlineLarge?.copyWith(
             color: isNight ? AppColors.text1 : AppColors.bg0,
             fontWeight: FontWeight.w800
           )
         ),
         const SizedBox(width: 8),
-        _buildLiveBadge(),
+        _buildLiveBadge(w),
       ],
     );
   }
 
-  Widget _buildLiveBadge() {
-    final isNight = widget.weather.isNight;
+  Widget _buildLiveBadge(WeatherInfo w) {
+    final isNight = w.isNight;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
@@ -171,9 +192,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildSmartTips() {
-    final tips = widget.weather.smartTips;
-    final isNight = widget.weather.isNight;
+  Widget _buildSmartTips(WeatherInfo w) {
+    final tips = w.smartTips;
+    final isNight = w.isNight;
     return _staggered(5, Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Column(
@@ -210,14 +231,14 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     ));
   }
 
-  Widget _buildTempDisplay() {
-    final isNight = widget.weather.isNight;
+  Widget _buildTempDisplay(WeatherInfo w) {
+    final isNight = w.isNight;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '${widget.weather.temperature.toInt()}', 
+          '${w.temperature.toInt()}', 
           style: GoogleFonts.outfit(
             fontSize: 88, 
             fontWeight: FontWeight.w200, 
@@ -238,18 +259,18 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildDescription() {
-    final isNight = widget.weather.isNight;
+  Widget _buildDescription(WeatherInfo w) {
+    final isNight = w.isNight;
     final primaryColor = isNight ? AppColors.text1 : AppColors.bg0;
     final secondaryColor = isNight ? AppColors.text2 : AppColors.bg0.withValues(alpha: 0.7);
     return RichText(
       text: TextSpan(
         style: GoogleFonts.nunito(fontSize: 14, color: secondaryColor, fontWeight: isNight ? FontWeight.w400 : FontWeight.w600),
         children: [
-          TextSpan(text: widget.weather.description, 
+          TextSpan(text: w.description, 
             style: GoogleFonts.nunito(fontWeight: FontWeight.w800, color: primaryColor)),
           const TextSpan(text: '   ·   Cảm giác như '),
-          TextSpan(text: '${widget.weather.feelsLike.toInt()}°C', 
+          TextSpan(text: '${w.feelsLike.toInt()}°C', 
             style: GoogleFonts.outfit(fontWeight: FontWeight.w600, 
             color: isNight ? AppColors.accentLight : Colors.blue.shade900)),
         ],
@@ -257,8 +278,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildInfoCards() {
-    final w = widget.weather;
+  Widget _buildInfoCards(WeatherInfo w) {
     final isNight = w.isNight;
     final items = [
       (CupertinoIcons.drop_fill, 'ĐỘ ẨM', '${w.humidity}', '%', AppColors.rain),
@@ -298,8 +318,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     ));
   }
 
-  Widget _buildMinMaxBar() {
-    final w = widget.weather;
+  Widget _buildMinMaxBar(WeatherInfo w) {
     final isNight = w.isNight;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
@@ -309,19 +328,19 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            _tempStat(CupertinoIcons.arrow_down_circle_fill, 'Thấp nhất', '${w.tempMin.toInt()}°', Colors.blue),
+            _tempStat(CupertinoIcons.arrow_down_circle_fill, 'Thấp nhất', '${w.tempMin.toInt()}°', Colors.blue, w),
             Container(width: 1, height: 32, color: isNight ? AppColors.glassBorder : AppColors.bg0.withValues(alpha: 0.1)),
-            _tempStat(CupertinoIcons.thermometer, 'Hiện tại', '${w.temperature.toInt()}°', AppColors.warm),
+            _tempStat(CupertinoIcons.thermometer, 'Hiện tại', '${w.temperature.toInt()}°', AppColors.warm, w),
             Container(width: 1, height: 32, color: isNight ? AppColors.glassBorder : AppColors.bg0.withValues(alpha: 0.1)),
-            _tempStat(CupertinoIcons.arrow_up_circle_fill, 'Cao nhất', '${w.tempMax.toInt()}°', Colors.redAccent),
+            _tempStat(CupertinoIcons.arrow_up_circle_fill, 'Cao nhất', '${w.tempMax.toInt()}°', Colors.redAccent, w),
           ],
         ),
       ),
     );
   }
 
-  Widget _tempStat(IconData icon, String label, String val, Color iconColor) {
-    final isNight = widget.weather.isNight;
+  Widget _tempStat(IconData icon, String label, String val, Color iconColor, WeatherInfo w) {
+    final isNight = w.isNight;
     return Column(children: [
       Icon(icon, size: 18, color: iconColor),
       const SizedBox(height: 4),
@@ -360,7 +379,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildSectionHeader(String title) {
-    final isNight = widget.weather.isNight;
+    final isNight = _weatherCtrl.weather.value?.isNight ?? true;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
       child: Row(children: [
@@ -379,8 +398,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _hourlyCard(HourlyForecast h) {
-    final isNight = widget.weather.isNight;
+    final isNight = _weatherCtrl.weather.value?.isNight ?? true;
     final textColor = isNight ? AppColors.text1 : AppColors.bg0;
+
     return TapScale(
       onTap: () {},
       scale: 0.95,
@@ -412,7 +432,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
   Widget _build7DayForecast() {
     final daily = WeatherData.dailyForecasts;
-    final isNight = widget.weather.isNight;
+    final isNight = _weatherCtrl.weather.value?.isNight ?? true;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -449,7 +470,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 
   Widget _dailyRow(DailyForecast d) {
-    final isNight = widget.weather.isNight;
+    final isNight = _weatherCtrl.weather.value?.isNight ?? true;
     final textColor = isNight ? AppColors.text1 : AppColors.bg0;
     
     return Padding(
