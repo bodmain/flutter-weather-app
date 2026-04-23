@@ -1,51 +1,67 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'package:http/http.dart' as http;
 import '../models/weather_model.dart';
 
 class AIController {
-  // Dán API Key mới nhất bạn lấy từ Google AI Studio vào đây
-  static const String _apiKey = 'AIzaSyDEz0lyCgb2dpsdykAIVau7U8jShSnDJu8';
-  
-  // URL gọi trực tiếp đến model Gemini 1.5 Flash
-  static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+
+  static const String _apiKey = 'AIzaSyDT5--XWAVD5GEwF1QRliBms1BUmLSU05E';
+
+  static const String _modelId = 'gemini-3-flash-preview';
+  static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/$_modelId:generateContent';
 
   Future<String> askAI(String question, WeatherInfo weather) async {
+    if (_apiKey.isEmpty) return "Lỗi: Bạn chưa cấu hình API Key.";
+
     try {
-      // Chuẩn bị nội dung câu hỏi kèm ngữ cảnh thời tiết
+      //  Prompt để AI tư vấn sâu hơn
       final prompt = """
-      Bạn là trợ lý thời tiết thông minh tại ${weather.cityName}. 
-      Thông tin hiện tại: ${weather.temperature}°C, ${weather.description}, UV: ${weather.uvIndex}.
-      Người dùng hỏi: "$question"
-      Hãy trả lời ngắn gọn, thân thiện và đưa ra lời khuyên thực tế.
+      Bạn là trợ lý thời tiết thông minh và tận tâm.
+      Bối cảnh: Tại ${weather.cityName}, nhiệt độ ${weather.temperature}°C, trạng thái: ${weather.description}, độ ẩm ${weather.humidity}%.
+      
+      Yêu cầu:
+      - Trả lời câu hỏi: "$question"
+      - Dựa trên dữ liệu thời tiết, hãy phân tích xem hoạt động người dùng hỏi có phù hợp không và đưa ra lời khuyên cụ thể (trang phục, sức khỏe, an toàn).
+      - Trả lời bằng tiếng Việt, giọng điệu thân thiện, tự nhiên. 
+      - Câu trả lời không quá dài nhưng phải đầy đủ ý, không được bỏ dở giữa chừng.
       """;
 
-      // Gửi yêu cầu POST trực tiếp
       final response = await http.post(
         Uri.parse('$_baseUrl?key=$_apiKey'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           "contents": [
             {
+              "role": "user",
               "parts": [{"text": prompt}]
             }
           ],
           "generationConfig": {
-            "temperature": 0.7,
-            "maxOutputTokens": 300,
+            "temperature": 0.8,
+            "maxOutputTokens": 800,
+            "topP": 0.95,
           }
         }),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
-        // Lấy nội dung phản hồi từ cấu trúc JSON của Google
-        return data['candidates'][0]['content']['parts'][0]['text'];
+
+        if (data['candidates'] != null && data['candidates'].isNotEmpty) {
+          final text = data['candidates'][0]['content']['parts'][0]['text'];
+          return text.trim();
+        } else {
+          return "AI đang suy nghĩ nhưng chưa đưa ra câu trả lời phù hợp. Bạn thử hỏi cách khác nhé!";
+        }
       } else {
+        log("AI Error Response: ${response.body}");
         final errorData = jsonDecode(response.body);
-        return "Lỗi từ máy chủ AI (${response.statusCode}): ${errorData['error']['message']}";
+        final errorMessage = errorData['error']?['message'] ?? "Lỗi không xác định";
+        return "Trợ lý đang bận một chút ($errorMessage).";
       }
     } catch (e) {
-      return "Lỗi kết nối: $e. Hãy kiểm tra Internet hoặc VPN.";
+      log("Connection Error: $e");
+      return "Không thể kết nối với trợ lý. Vui lòng kiểm tra internet.";
     }
   }
 }

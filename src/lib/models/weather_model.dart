@@ -95,8 +95,16 @@ class WeatherInfo {
     final sunrise = sys['sunrise'] as int;
     final sunset = sys['sunset'] as int;
 
+    // Xử lý rút gọn tên thành phố: bỏ "Thành phố ", "Tỉnh ", v.v.
+    String rawName = json['name'] ?? '';
+    String cleanName = rawName
+        .replaceAll('Thành phố ', '')
+        .replaceAll('Tỉnh ', '')
+        .replaceAll('Thành phố', '')
+        .trim();
+
     return WeatherInfo(
-      cityName: json['name'],
+      cityName: cleanName.isNotEmpty ? cleanName : rawName,
       country: sys['country'],
       temperature: (main['temp'] as num).toDouble(),
       feelsLike: (main['feels_like'] as num).toDouble(),
@@ -104,7 +112,7 @@ class WeatherInfo {
       tempMax: (main['temp_max'] as num).toDouble(),
       humidity: main['humidity'] as int,
       windSpeed: (wind['speed'] as num).toDouble(),
-      uvIndex: 0, // OpenWeather 2.5 free basic doesn't have UV
+      uvIndex: 0, 
       description: weather['description'],
       condition: _mapMainToCondition(weather['main'], weather['id']),
       isNight: dt < sunrise || dt >= sunset,
@@ -121,7 +129,6 @@ class WeatherInfo {
     return WeatherCondition.cloudy;
   }
 
-  // 🧠 Logic Lời khuyên thông minh
   List<(IconData, String, Color)> get smartTips {
     final List<(IconData, String, Color)> tips = [];
 
@@ -192,7 +199,7 @@ class AlertSetting {
 class WeatherData {
   static const WeatherInfo hanoi = WeatherInfo(
     cityName: 'Hà Nội',
-    country: 'Việt Nam',
+    country: 'VN',
     temperature: 28,
     feelsLike: 30,
     tempMin: 22,
@@ -206,10 +213,10 @@ class WeatherData {
   );
 
   static const List<WeatherInfo> cities = [
-    WeatherInfo(cityName: 'Hà Nội',      country: 'Việt Nam', temperature: 28, feelsLike: 30, tempMin: 22, tempMax: 31, humidity: 72, windSpeed: 12, uvIndex: 6, description: 'Nắng nhẹ',  condition: WeatherCondition.partlyCloudy, isNight: false),
-    WeatherInfo(cityName: 'Hồ Chí Minh', country: 'Việt Nam', temperature: 24, feelsLike: 26, tempMin: 22, tempMax: 28, humidity: 85, windSpeed: 5,  uvIndex: 0, description: 'Trời quang', condition: WeatherCondition.clearNight, isNight: true),
-    WeatherInfo(cityName: 'Đà Nẵng',     country: 'Việt Nam', temperature: 29, feelsLike: 31, tempMin: 24, tempMax: 32, humidity: 68, windSpeed: 15, uvIndex: 5, description: 'Ít mây',    condition: WeatherCondition.cloudy, isNight: false),
-    WeatherInfo(cityName: 'Đà Lạt',      country: 'Việt Nam', temperature: 16, feelsLike: 14, tempMin: 12, tempMax: 18, humidity: 90, windSpeed: 10, uvIndex: 0, description: 'Đêm lạnh',  condition: WeatherCondition.clearNight, isNight: true),
+    WeatherInfo(cityName: 'Hà Nội',      country: 'VN', temperature: 28, feelsLike: 30, tempMin: 22, tempMax: 31, humidity: 72, windSpeed: 12, uvIndex: 6, description: 'Nắng nhẹ',  condition: WeatherCondition.partlyCloudy, isNight: false),
+    WeatherInfo(cityName: 'Hồ Chí Minh', country: 'VN', temperature: 24, feelsLike: 26, tempMin: 22, tempMax: 28, humidity: 85, windSpeed: 5,  uvIndex: 0, description: 'Trời quang', condition: WeatherCondition.clearNight, isNight: true),
+    WeatherInfo(cityName: 'Đà Nẵng',     country: 'VN', temperature: 29, feelsLike: 31, tempMin: 24, tempMax: 32, humidity: 68, windSpeed: 15, uvIndex: 5, description: 'Ít mây',    condition: WeatherCondition.cloudy, isNight: false),
+    WeatherInfo(cityName: 'Đà Lạt',      country: 'VN', temperature: 16, feelsLike: 14, tempMin: 12, tempMax: 18, humidity: 90, windSpeed: 10, uvIndex: 0, description: 'Đêm lạnh',  condition: WeatherCondition.clearNight, isNight: true),
   ];
 
   static const List<HourlyForecast> hourlyForecasts = [
@@ -232,7 +239,7 @@ class WeatherData {
     AlertSetting(title: 'Cảnh báo mưa',              description: 'Thông báo khi có mưa lớn sắp xảy ra',         icon: CupertinoIcons.cloud_rain_fill, isEnabled: true),
     AlertSetting(title: 'Cảnh báo UV cao',            description: 'Chỉ số UV > 6, nguy hiểm cho làn da',         icon: CupertinoIcons.sun_max_fill,  isEnabled: true),
     AlertSetting(title: 'Cảnh báo bão',               description: 'Cập nhật bão & áp thấp nhiệt đới',            icon: CupertinoIcons.hurricane, isEnabled: false),
-    AlertSetting(title: 'Dự báo hằng ngày',           description: 'Nhận tóm tắt thời tiết lúc 7:00 sáng',       icon: CupertinoIcons.calendar, isEnabled: true),
+    AlertSetting(title: 'Chào ngày mới',              description: 'Lời chào thân thương và tóm tắt thời tiết lúc 7:00 sáng mỗi ngày', icon: CupertinoIcons.calendar, isEnabled: true),
     AlertSetting(title: 'Biến động nhiệt độ',         description: 'Thay đổi > 5°C so với hôm qua',               icon: CupertinoIcons.thermometer, isEnabled: false),
   ];
 }

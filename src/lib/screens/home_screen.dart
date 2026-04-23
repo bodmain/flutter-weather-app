@@ -162,12 +162,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         Icon(CupertinoIcons.location_solid, 
           color: isNight ? AppColors.accent : AppColors.bg0, size: 18),
         const SizedBox(width: 6),
-        Text(
-          w.cityName, 
-          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-            color: isNight ? AppColors.text1 : AppColors.bg0,
-            fontWeight: FontWeight.w800
-          )
+        Flexible( // Thêm Flexible để xử lý tràn chữ
+          child: Text(
+            w.cityName, 
+            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+              color: isNight ? AppColors.text1 : AppColors.bg0,
+              fontWeight: FontWeight.w800
+            ),
+            overflow: TextOverflow.ellipsis, // Hiển thị ... nếu quá dài
+            maxLines: 1,
+          ),
         ),
         const SizedBox(width: 8),
         _buildLiveBadge(w),

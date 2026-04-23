@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import '../models/weather_model.dart';
 import '../controllers/ai_controller.dart';
 import '../theme/app_theme.dart';
@@ -50,10 +51,13 @@ class _AIAssistantSheetState extends State<AIAssistantSheet> {
   }
 
   void _scrollToBottom() {
-    Future.delayed(const Duration(milliseconds: 100), () {
+    Future.delayed(const Duration(milliseconds: 350), () {
       if (_scrollCtrl.hasClients) {
-        _scrollCtrl.animateTo(_scrollCtrl.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+        _scrollCtrl.animateTo(
+          _scrollCtrl.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeOutQuart,
+        );
       }
     });
   }
@@ -64,7 +68,7 @@ class _AIAssistantSheetState extends State<AIAssistantSheet> {
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.7,
+      height: MediaQuery.of(context).size.height * 0.8,
       decoration: BoxDecoration(
         color: isNight ? AppColors.bg1 : Colors.blue.shade50,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
@@ -72,100 +76,113 @@ class _AIAssistantSheetState extends State<AIAssistantSheet> {
       padding: EdgeInsets.only(bottom: bottomPadding),
       child: Column(
         children: [
-          // Header
           Container(
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Container(width: 40, height: 4, decoration: BoxDecoration(color: isNight ? Colors.white24 : Colors.black12, borderRadius: BorderRadius.circular(2))),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
             child: Row(
               children: [
                 const Icon(CupertinoIcons.sparkles, color: AppColors.accent, size: 24),
                 const SizedBox(width: 10),
-                Text('Trợ lý thời tiết AI', style: GoogleFonts.nunito(fontSize: 18, fontWeight: FontWeight.w800, color: isNight ? Colors.white : AppColors.bg0)),
+                Text('Trợ lý AI', style: GoogleFonts.nunito(fontSize: 18, fontWeight: FontWeight.w800, color: isNight ? Colors.white : AppColors.bg0)),
                 const Spacer(),
-                IconButton(icon: const Icon(CupertinoIcons.xmark_circle_fill), onPressed: () => Navigator.pop(context), color: isNight ? Colors.white24 : Colors.black26),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Icon(CupertinoIcons.xmark_circle_fill, color: isNight ? Colors.white24 : Colors.black26),
+                ),
               ],
             ),
           ),
-          const Divider(),
-
-          // Chat Content
+          const Divider(height: 1),
           Expanded(
             child: ListView.builder(
               controller: _scrollCtrl,
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
               itemCount: _messages.length,
               itemBuilder: (context, i) {
                 final msg = _messages[i];
                 final isAI = msg['role'] == 'ai';
-                return Align(
-                  alignment: isAI ? Alignment.centerLeft : Alignment.centerRight,
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.all(14),
-                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-                    decoration: BoxDecoration(
-                      color: isAI 
-                          ? (isNight ? Colors.white.withValues(alpha: 0.05) : Colors.white)
-                          : AppColors.accent,
-                      borderRadius: BorderRadius.circular(20).copyWith(
-                        bottomLeft: isAI ? const Radius.circular(0) : const Radius.circular(20),
-                        bottomRight: isAI ? const Radius.circular(20) : const Radius.circular(0),
-                      ),
-                      border: isAI ? Border.all(color: isNight ? Colors.white10 : Colors.black.withValues(alpha: 0.05)) : null,
-                    ),
-                    child: Text(
-                      msg['text']!,
-                      style: GoogleFonts.nunito(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: isAI ? (isNight ? Colors.white : AppColors.bg0) : Colors.white,
-                      ),
-                    ),
-                  ),
-                );
+                return _buildChatBubble(msg['text']!, isAI, isNight);
               },
             ),
           ),
-
           if (_isLoading)
             const Padding(
-              padding: EdgeInsets.all(8.0),
+              padding: EdgeInsets.all(12.0),
               child: CupertinoActivityIndicator(),
             ),
+          _buildInputArea(isNight),
+        ],
+      ),
+    );
+  }
 
-          // Input
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _textCtrl,
-                    onSubmitted: (_) => _sendMessage(),
-                    style: GoogleFonts.nunito(color: isNight ? Colors.white : AppColors.bg0),
-                    decoration: InputDecoration(
-                      hintText: 'Hỏi AI về kế hoạch của bạn...',
-                      hintStyle: GoogleFonts.nunito(color: isNight ? Colors.white38 : Colors.black38),
-                      filled: true,
-                      fillColor: isNight ? Colors.white.withValues(alpha: 0.05) : Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                GestureDetector(
-                  onTap: _sendMessage,
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: const BoxDecoration(color: AppColors.accent, shape: BoxShape.circle),
-                    child: const Icon(CupertinoIcons.arrow_up, color: Colors.white, size: 20),
-                  ),
-                ),
-              ],
+  Widget _buildChatBubble(String text, bool isAI, bool isNight) {
+    return Align(
+      alignment: isAI ? Alignment.centerLeft : Alignment.centerRight,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
+        decoration: BoxDecoration(
+          color: isAI 
+              ? (isNight ? Colors.white.withValues(alpha: 0.05) : Colors.white)
+              : AppColors.accent,
+          borderRadius: BorderRadius.circular(18).copyWith(
+            bottomLeft: isAI ? const Radius.circular(0) : const Radius.circular(18),
+            bottomRight: isAI ? const Radius.circular(18) : const Radius.circular(0),
+          ),
+        ),
+        child: isAI 
+          ? MarkdownBody(
+              data: text,
+              styleSheet: MarkdownStyleSheet(
+                p: GoogleFonts.nunito(fontSize: 14, fontWeight: FontWeight.w600, color: isNight ? Colors.white : AppColors.bg0, height: 1.5),
+                strong: GoogleFonts.nunito(fontWeight: FontWeight.w800, color: isNight ? Colors.white : AppColors.bg0),
+                listBullet: GoogleFonts.nunito(color: AppColors.accent),
+              ),
+            )
+          : Text(
+              text,
+              style: GoogleFonts.nunito(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white),
+            ),
+      ),
+    );
+  }
+
+  Widget _buildInputArea(bool isNight) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+      decoration: BoxDecoration(
+        color: isNight ? AppColors.bg1 : Colors.blue.shade50,
+        border: Border(top: BorderSide(color: isNight ? Colors.white10 : Colors.black.withValues(alpha: 0.05))),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _textCtrl,
+              onSubmitted: (_) => _sendMessage(),
+              style: GoogleFonts.nunito(color: isNight ? Colors.white : AppColors.bg0, fontWeight: FontWeight.w600),
+              decoration: InputDecoration(
+                hintText: 'Hỏi AI...',
+                hintStyle: GoogleFonts.nunito(color: isNight ? Colors.white38 : Colors.black38),
+                filled: true,
+                fillColor: isNight ? Colors.white.withValues(alpha: 0.05) : Colors.white,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          GestureDetector(
+            onTap: _sendMessage,
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: const BoxDecoration(color: AppColors.accent, shape: BoxShape.circle),
+              child: const Icon(CupertinoIcons.arrow_up, color: Colors.white, size: 20),
             ),
           ),
         ],

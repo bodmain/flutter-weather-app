@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -12,11 +13,13 @@ class SearchController extends GetxController {
   final TextEditingController textCtrl = TextEditingController();
   final FocusNode focusNode = FocusNode();
   
-  static List<WeatherInfo> history = [];
+  // Chuyển history thành RxList để có thể quan sát được
+  static var history = <WeatherInfo>[].obs;
   
   var results = <WeatherInfo>[].obs;
   var isSearching = false.obs;
-  bool hasText = false;
+  var hasText = false.obs; // Chuyển thành RxBool
+  Timer? _debounce;
 
   late AnimationController listCtrl;
 
@@ -26,31 +29,37 @@ class SearchController extends GetxController {
       duration: const Duration(milliseconds: 400),
     )..forward();
     
-    // Khởi tạo danh sách ban đầu là lịch sử hoặc gợi ý
-    results.value = history.isNotEmpty ? history : WeatherData.cities;
+    results.assignAll(history.isNotEmpty ? history : WeatherData.cities);
   }
 
-  // Hàm tìm kiếm từ API khi người dùng nhập
-  void onTextChanged(String q) async {
-    hasText = q.trim().isNotEmpty;
+  void onTextChanged(String q) {
+    hasText.value = q.trim().isNotEmpty;
     
-    if (!hasText) {
-      results.value = history.isNotEmpty ? history : WeatherData.cities;
+    if (_debounce?.isActive ?? false) _debounce?.cancel();
+
+    if (!hasText.value) {
+      results.assignAll(history.isNotEmpty ? history : WeatherData.cities);
+      isSearching(false);
       return;
     }
 
-    if (q.length < 2) return; // Chỉ tìm khi nhập từ 2 ký tự
+    if (q.length < 2) return;
 
+    _debounce = Timer(const Duration(milliseconds: 500), () async {
+      _executeSearch(q);
+    });
+  }
+
+  Future<void> _executeSearch(String q) async {
     try {
       isSearching(true);
-      // Gọi API để lấy thời tiết của thành phố đang gõ
-      // Lưu ý: Để tối ưu, trong thực tế nên dùng debounce (đợi người dùng ngừng gõ)
+      results.clear(); 
+      
       final cityWeather = await _service.fetchWeather(q);
-      results.value = [cityWeather]; // Hiển thị kết quả tìm thấy
+      results.assignAll([cityWeather]);
     } catch (e) {
-      // Nếu không tìm thấy thành phố từ API, lọc trong list mockup
-      results.value = WeatherData.cities.where((c) =>
-          c.cityName.toLowerCase().contains(q.toLowerCase())).toList();
+      results.assignAll(WeatherData.cities.where((c) =>
+          c.cityName.toLowerCase().contains(q.toLowerCase())).toList());
     } finally {
       isSearching(false);
       listCtrl.forward(from: 0);
@@ -58,9 +67,11 @@ class SearchController extends GetxController {
   }
 
   void clearSearch() {
+    if (_debounce?.isActive ?? false) _debounce?.cancel();
     textCtrl.clear();
-    hasText = false;
-    results.value = history.isNotEmpty ? history : WeatherData.cities;
+    hasText.value = false;
+    isSearching(false);
+    results.assignAll(history.isNotEmpty ? history : WeatherData.cities);
     focusNode.requestFocus();
     HapticFeedback.selectionClick();
   }
@@ -68,19 +79,19 @@ class SearchController extends GetxController {
   void selectCity(WeatherInfo selectedCity) {
     HapticFeedback.mediumImpact();
 
-    // Cập nhật lịch sử
     history.removeWhere((c) => c.cityName == selectedCity.cityName);
     history.insert(0, selectedCity);
     if (history.length > 5) history.removeLast();
 
     textCtrl.clear(); 
-    hasText = false;
+    hasText.value = false;
 
     onCitySelected(selectedCity);
   }
 
   @override
   void onClose() {
+    _debounce?.cancel();
     textCtrl.dispose();
     focusNode.dispose();
     listCtrl.dispose();

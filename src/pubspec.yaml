@@ -16,8 +16,11 @@ dependencies:
   shared_preferences: ^2.2.3
   flutter_vibrate: ^1.3.0
   google_generative_ai: ^0.4.7
-  # Thêm GetX để quản lý trạng thái
   get: ^4.6.6
+  flutter_markdown: ^0.7.3
+  # THÊM 2 THƯ VIỆN NÀY
+  flutter_local_notifications: ^17.2.2
+  timezone: ^0.9.4
 
 dev_dependencies:
   flutter_test:

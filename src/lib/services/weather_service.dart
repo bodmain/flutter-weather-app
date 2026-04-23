@@ -1,36 +1,45 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/weather_model.dart';
 
 class WeatherService {
-  // Dán API Key thật của bạn vào đây
   static const String _apiKey = 'ff90cfe4876570e3abd71cdead590092'; 
-  static const String _baseUrl = 'https://api.openweathermap.org/data/2.5/weather';
+  static const String _authority = 'api.openweathermap.org';
+  static const String _path = '/data/2.5/weather';
 
   Future<WeatherInfo> fetchWeather(String cityName) async {
-    final url = '$_baseUrl?q=$cityName&appid=$_apiKey&units=metric&lang=vi';
-    
-    // In ra URL để kiểm chứng
-    log('--- ĐANG GỌI API: $url ---');
+    // Chuẩn hóa tên thành phố cho API
+    String queryName = cityName;
+    if (cityName.toLowerCase().contains('hồ chí minh') || cityName.toLowerCase().contains('ho chi minh')) {
+      queryName = 'Ho Chi Minh City'; // Tên chuẩn API nhận diện tốt nhất
+    }
 
+    final uri = Uri.https(_authority, _path, {
+      'q': queryName,
+      'appid': _apiKey,
+      'units': 'metric',
+      'lang': 'vi',
+    });
+    
+    log('Requesting Weather for: $queryName');
+    
     try {
-      final response = await http.get(Uri.parse(url));
+      final response = await http.get(uri).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
-        
-        // In dữ liệu thô nhận được từ vệ tinh
-        log('--- DỮ LIỆU TỪ API: $data ---');
-        
         return WeatherInfo.fromJson(data);
+      } else if (response.statusCode == 404) {
+        throw Exception('Không tìm thấy thành phố: $cityName');
       } else {
-        log('--- LỖI API: ${response.statusCode} - ${response.body} ---');
-        throw Exception('Lỗi lấy dữ liệu: ${response.statusCode}');
+        throw Exception('Lỗi hệ thống: ${response.statusCode}');
       }
+    } on SocketException {
+      throw Exception('Không có kết nối Internet.');
     } catch (e) {
-      log('--- LỖI KẾT NỐI: $e ---');
-      rethrow;
+      throw Exception('Lỗi kết nối máy chủ.');
     }
   }
 }

@@ -1,7 +1,7 @@
 // lib/main.dart
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import 'screens/home_screen.dart';
 import 'screens/search_screen.dart';
@@ -9,10 +9,15 @@ import 'screens/alert_screen.dart';
 import 'theme/app_theme.dart';
 import 'models/weather_model.dart';
 import 'controllers/weather_controller.dart';
+import 'services/notification_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Khởi tạo Controller toàn cục
+  
+  // Khởi tạo Notification Service
+  final notificationService = NotificationService();
+  await notificationService.init();
+  
   Get.put(WeatherController());
   runApp(const WeatherApp());
 }
@@ -22,7 +27,7 @@ class WeatherApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp( // Sử dụng GetMaterialApp để dùng GetX
+    return GetMaterialApp(
       title: 'WeatherNow',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
@@ -71,29 +76,33 @@ class _MainShellState extends State<MainShell> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    return Obx(() {
-      final isNight = _weatherCtrl.weather.value?.isNight ?? true;
-      
-      final screens = [
-        HomeScreen(weather: _weatherCtrl.weather.value ?? WeatherData.hanoi), 
-        SearchScreen(onCitySelected: _updateCity, isNight: isNight), 
-        AlertScreen(isNight: isNight)
-      ];
+    final isNight = _weatherCtrl.weather.value?.isNight ?? true;
+    
+    final screens = [
+      HomeScreen(weather: _weatherCtrl.weather.value ?? WeatherData.hanoi), 
+      SearchScreen(onCitySelected: _updateCity, isNight: isNight), 
+      AlertScreen(isNight: isNight)
+    ];
 
-      return Scaffold(
-        backgroundColor: isNight ? AppColors.bg0 : AppColors.dayBg0,
-        extendBody: true,
-        body: IndexedStack(
-          index: _idx,
-          children: screens,
-        ),
-        bottomNavigationBar: _buildNav(isNight),
-      );
-    });
+    return Scaffold(
+      backgroundColor: isNight ? AppColors.bg0 : AppColors.dayBg0,
+      extendBody: true,
+      body: IndexedStack(
+        index: _idx,
+        children: screens,
+      ),
+      bottomNavigationBar: Obx(() => _buildNav(_weatherCtrl.weather.value?.isNight ?? true)),
+    );
   }
 
   Widget _buildNav(bool isNight) {
-    // ... Giữ nguyên hàm _buildNav và class _NavItem của bạn ...
+    final labels = ['Trang chủ', 'Tìm kiếm', 'Thông báo'];
+    final icons = [
+      (CupertinoIcons.house, CupertinoIcons.house_fill),
+      (CupertinoIcons.search, CupertinoIcons.search),
+      (CupertinoIcons.bell, CupertinoIcons.bell_fill),
+    ];
+
     return ClipRRect(
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
@@ -106,23 +115,34 @@ class _MainShellState extends State<MainShell> with SingleTickerProviderStateMix
           child: SizedBox(
             height: 68,
             child: Row(
-              children: List.generate(3, (i) {
-                final labels = ['Trang chủ', 'Tìm kiếm', 'Thông báo'];
-                final icons = [(CupertinoIcons.house, CupertinoIcons.house_fill), (CupertinoIcons.search, CupertinoIcons.search), (CupertinoIcons.bell, CupertinoIcons.bell_fill)];
-                return Expanded(
-                  child: GestureDetector(
-                    onTap: () => _onTap(i),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(_idx == i ? icons[i].$2 : icons[i].$1, color: _idx == i ? (isNight ? AppColors.accent : Colors.blue.shade800) : (isNight ? AppColors.text3 : Colors.black38)),
-                        const SizedBox(height: 4),
-                        Text(labels[i], style: TextStyle(fontSize: 10, color: _idx == i ? (isNight ? AppColors.accent : Colors.blue.shade800) : (isNight ? AppColors.text3 : Colors.black38))),
-                      ],
-                    ),
+              children: List.generate(3, (i) => Expanded(
+                child: InkWell(
+                  onTap: () => _onTap(i),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        _idx == i ? icons[i].$2 : icons[i].$1,
+                        color: _idx == i 
+                            ? (isNight ? AppColors.accent : Colors.blue.shade800) 
+                            : (isNight ? AppColors.text3 : Colors.black38),
+                        size: 24,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        labels[i],
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: _idx == i ? FontWeight.w800 : FontWeight.w600,
+                          color: _idx == i 
+                              ? (isNight ? AppColors.accent : Colors.blue.shade800) 
+                              : (isNight ? AppColors.text3 : Colors.black38),
+                        ),
+                      ),
+                    ],
                   ),
-                );
-              }),
+                ),
+              )),
             ),
           ),
         ),

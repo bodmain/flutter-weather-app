@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:get/get.dart';
 import '../theme/app_theme.dart';
 import '../models/weather_model.dart';
 import '../widgets/glass_card.dart';
@@ -20,46 +21,52 @@ class _AlertScreenState extends State<AlertScreen> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
-    _controller = ctrl.AlertController(vsync: this, context: context);
+    _controller = ctrl.AlertController(vsync: this);
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller.onClose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final weatherAlerts = _controller.settings.sublist(0, 3);
-    final generalAlerts = _controller.settings.sublist(3);
-
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Container(
         decoration: BoxDecoration(gradient: AppTheme.getScreenGradient(widget.isNight)),
         child: SafeArea(
-          child: CustomScrollView(
-            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-            slivers: [
-              SliverToBoxAdapter(child: _buildHeader()),
-              SliverToBoxAdapter(child: _buildActiveBanner()),
-              SliverToBoxAdapter(child: _buildSectionLabel('CẢNH BÁO THỜI TIẾT')),
-              SliverList(delegate: SliverChildBuilderDelegate(
-                (_, i) => _animatedRow(weatherAlerts[i], _controller.settings.indexOf(weatherAlerts[i]), i),
-                childCount: weatherAlerts.length,
-              )),
-              const SliverToBoxAdapter(child: SizedBox(height: 10)),
-              SliverToBoxAdapter(child: _buildSectionLabel('THÔNG BÁO CHUNG')),
-              SliverList(delegate: SliverChildBuilderDelegate(
-                (_, i) => _animatedRow(generalAlerts[i], _controller.settings.indexOf(generalAlerts[i]), i + 3),
-                childCount: generalAlerts.length,
-              )),
-              const SliverToBoxAdapter(child: SizedBox(height: 100)),
-              SliverToBoxAdapter(child: _buildSaveButton()),
-              const SliverToBoxAdapter(child: SizedBox(height: 16)),
-            ],
-          ),
+          child: Obx(() {
+            final weatherAlerts = _controller.settings.sublist(0, 3);
+            final generalAlerts = _controller.settings.sublist(3);
+
+            return CustomScrollView(
+              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+              slivers: [
+                SliverToBoxAdapter(child: _buildHeader()),
+                
+                // Đã loại bỏ _buildActiveBanner() ở đây
+                
+                SliverToBoxAdapter(child: _buildSectionLabel('CẢNH BÁO THỜI TIẾT')),
+                SliverList(delegate: SliverChildBuilderDelegate(
+                  (_, i) => _animatedRow(weatherAlerts[i], i, i),
+                  childCount: weatherAlerts.length,
+                )),
+                
+                const SliverToBoxAdapter(child: SizedBox(height: 10)),
+                SliverToBoxAdapter(child: _buildSectionLabel('THÔNG BÁO CHUNG')),
+                SliverList(delegate: SliverChildBuilderDelegate(
+                  (_, i) => _animatedRow(generalAlerts[i], i + 3, i + 3),
+                  childCount: generalAlerts.length,
+                )),
+                
+                const SliverToBoxAdapter(child: SizedBox(height: 40)),
+                SliverToBoxAdapter(child: _buildSaveButton()),
+                const SliverToBoxAdapter(child: SizedBox(height: 100)),
+              ],
+            );
+          }),
         ),
       ),
     );
@@ -75,43 +82,13 @@ class _AlertScreenState extends State<AlertScreen> with SingleTickerProviderStat
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Thông báo', 
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(color: titleColor)),
+            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+              color: titleColor, fontWeight: FontWeight.w800
+            )),
           const SizedBox(height: 4),
           Text('Tùy chỉnh cảnh báo thời tiết của bạn', 
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: subTitleColor)),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: subTitleColor, fontWeight: FontWeight.w600)),
         ],
-      ),
-    );
-  }
-
-  Widget _buildActiveBanner() {
-    final isNight = widget.isNight;
-    final titleColor = isNight ? AppColors.danger.withValues(alpha: 0.9) : const Color(0xFFC53030); 
-    final descColor = isNight ? AppColors.text2 : AppColors.bg0.withValues(alpha: 0.8);
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 18),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(colors: [
-            AppColors.danger.withValues(alpha: 0.16),
-            AppColors.danger.withValues(alpha: 0.06),
-          ]),
-          borderRadius: AppTheme.cardRadius,
-          border: Border.all(color: AppColors.danger.withValues(alpha: 0.28)),
-        ),
-        child: Row(children: [
-          Icon(CupertinoIcons.exclamationmark_triangle_fill, color: titleColor, size: 24),
-          const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Cảnh báo: Mưa lớn hôm nay', 
-              style: GoogleFonts.nunito(fontSize: 13, fontWeight: FontWeight.w800, color: titleColor)),
-            const SizedBox(height: 4),
-            Text('Mưa to từ 17:00–20:00 tại Hà Nội. Hạn chế ra ngoài.', 
-              style: GoogleFonts.nunito(fontSize: 12, fontWeight: FontWeight.w500, color: descColor)),
-          ])),
-        ]),
       ),
     );
   }
@@ -125,14 +102,14 @@ class _AlertScreenState extends State<AlertScreen> with SingleTickerProviderStat
     );
   }
 
-  Widget _animatedRow(AlertSetting s, int settingIdx, int animIdx) {
+  Widget _animatedRow(AlertSetting s, int index, int animIdx) {
     final delay = (animIdx * 0.08).clamp(0.0, 0.5);
     final anim = CurvedAnimation(parent: _controller.entryCtrl, curve: Interval(delay, delay + 0.35, curve: Curves.easeOutCubic));
     return FadeTransition(
       opacity: anim,
       child: SlideTransition(
         position: Tween<Offset>(begin: const Offset(0.05, 0), end: Offset.zero).animate(anim),
-        child: Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 8), child: _buildToggleRow(s, settingIdx)),
+        child: Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 8), child: _buildToggleRow(s, index)),
       ),
     );
   }
@@ -141,13 +118,13 @@ class _AlertScreenState extends State<AlertScreen> with SingleTickerProviderStat
     final isNight = widget.isNight;
     final titleColor = isNight ? AppColors.text1 : AppColors.bg0;
     final descColor = isNight ? AppColors.text2 : AppColors.bg0.withValues(alpha: 0.6);
-    final iconColor = isNight ? AppColors.accent : Colors.blue.shade800;
+    final iconColor = s.isEnabled ? AppColors.accent : (isNight ? AppColors.text3 : Colors.grey);
 
     return GlassCard(
       decoration: s.isEnabled 
         ? (isNight ? AppTheme.glassBoxHighlight() : _dayHighlightBox()) 
         : (isNight ? AppTheme.glassBox() : _dayNormalBox()),
-      onTap: () => _controller.toggleSetting(index, () => setState(() {})),
+      onTap: () => _controller.toggleSetting(index),
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       child: Row(children: [
         SizedBox(
@@ -166,7 +143,7 @@ class _AlertScreenState extends State<AlertScreen> with SingleTickerProviderStat
 
   Widget _buildCustomToggle(bool value, int index) {
     return GestureDetector(
-      onTap: () => _controller.toggleSetting(index, () => setState(() {})),
+      onTap: () => _controller.toggleSetting(index),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         width: 46, height: 26,
@@ -177,7 +154,7 @@ class _AlertScreenState extends State<AlertScreen> with SingleTickerProviderStat
         child: AnimatedAlign(
           duration: const Duration(milliseconds: 200),
           alignment: value ? Alignment.centerRight : Alignment.centerLeft,
-          child: Container(margin: const EdgeInsets.all(3), width: 20, height: 20, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)),
+          child: Container(margin: const EdgeInsets.all(3), width: 20, height: 20, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)])),
         ),
       ),
     );
@@ -211,11 +188,10 @@ class _AlertScreenState extends State<AlertScreen> with SingleTickerProviderStat
     );
   }
 
-  // Helper cho giao diện ban ngày
   BoxDecoration _dayNormalBox() => BoxDecoration(
-    color: Colors.white.withValues(alpha: 0.4),
+    color: Colors.white.withValues(alpha: 0.35),
     borderRadius: BorderRadius.circular(20),
-    border: Border.all(color: Colors.white.withValues(alpha: 0.6), width: 1),
+    border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1),
   );
 
   BoxDecoration _dayHighlightBox() => BoxDecoration(
