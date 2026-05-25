@@ -12,13 +12,29 @@
 
 ## MỤC LỤC
 
+0. [Bảng đối chiếu tiêu chí chấm điểm](#bảng-đối-chiếu-tiêu-chí-chấm-điểm)
 1. [Mở đầu](#mở-đầu)
-2. [Chương 1. Cơ sở lý thuyết](#chương-1-cơ-sở-lý-thuyết)
-3. [Chương 2. Xây dựng ứng dụng](#chương-2-xây-dựng-ứng-dụng)
-4. [Chương 3. Thực nghiệm](#chương-3-thực-nghiệm)
+2. [Chương 1. Cơ sở lý thuyết](#chương-1-cơ-s-ở-lý-thuyết) — Tiêu chí **2.1**
+3. [Chương 2. Xây dựng ứng dụng](#chương-2-xây-dựng-ứng-dụng) — Tiêu chí **2.2, 2.3, 2.4**
+4. [Chương 3. Thực nghiệm](#chương-3-thực-nghiệm) — Tiêu chí **2.3, 2.5**
 5. [Kết luận](#kết-luận)
 6. [Phụ lục](#phụ-lục)
 7. [Tài liệu tham khảo](#tài-liệu-tham-khảo)
+
+---
+
+# BẢNG ĐỐI CHIẾU TIÊU CHÍ CHẤM ĐIỂM
+
+Báo cáo bám **Phiếu chấm BTL có vấn đáp** (6,0 điểm bản mềm + 1,0 hình thức). Tra cứu nhanh:
+
+| STT | Tiêu chí | Điểm | Mục báo cáo |
+|-----|----------|------|-------------|
+| 1 | Hình thức, đầy đủ đầu mục đề bài | 1,0 | Mở đầu → Ch.1–3 → Kết luận; Phụ lục/TLTK riêng |
+| 2.1 | Lý thuyết, PP, thư viện, công cụ | 1,0 | **Chương 1** (mục 1.1–1.10) |
+| 2.2 | Chức năng, phân hệ, nền tảng | 1,0 | **Chương 2** — mục 2.1, 2.2, **2.6** |
+| 2.3 | Kiến trúc, thiết kế lớp, UI/UX, triển khai | 1,0 | **Chương 2** — mục **2.7, 2.8, 2.9**; **Chương 3** — 3.1 |
+| 2.4 | Mô hình dữ liệu, lưu trữ | 1,0 | **Chương 2** — mục **2.10** |
+| 2.5 | Kiểm thử chức năng & phi chức năng | 1,0 | **Chương 3** — mục **3.3–3.6** |
 
 ---
 
@@ -192,6 +208,22 @@ Nguyên tắc áp dụng trong WeatherNow:
 - **Haptic feedback:** phản hồi xúc giác khi chuyển tab, chọn thành phố.
 
 ## 1.9. Bảo mật và quyền riêng tư
+
+## 1.10. Công cụ phát triển và môi trường *(Bổ sung tiêu chí 2.1)*
+
+| Công cụ | Phiên bản / ghi chú | Vai trò trong dự án |
+|---------|---------------------|---------------------|
+| **Flutter SDK** | ≥ 3.3 | Build UI đa nền tảng |
+| **Dart SDK** | ≥ 3.3 | Ngôn ngữ lập trình |
+| **Android Studio** | Mới nhất | Emulator Android, Gradle build |
+| **VS Code / Cursor** | — | Soạn thảo, debug |
+| **Xcode** | 15+ (macOS) | Build & ký iOS |
+| **Git / GitHub** | — | Quản lý mã nguồn, nộp Elearning |
+| **draw.io** | — | Mockup `weather_app_mockup.drawio.png` |
+| **Postman** (khuyến nghị) | — | Kiểm thử API OpenWeatherMap |
+
+**Phương pháp luận phát triển:** phát triển lặp (iterative) theo tuần — mockup → UI → tích hợp API → thông báo → AI → kiểm thử; kết hợp **top-down** (thiết kế use case trước) và **bottom-up** (tích hợp từng service).
+
 
 - API key nên đặt trong biến môi trường hoặc `--dart-define`, không commit công khai lên repository công cộng.
 - Xin quyền `POST_NOTIFICATIONS` (Android 13+) trước khi gửi thông báo.
@@ -417,6 +449,286 @@ src/
 
 ---
 
+
+## 2.6. Phân hệ ứng dụng và nền tảng triển khai *(Tiêu chí 2.2)*
+
+### 2.6.1. Các phân hệ (subsystem)
+
+Dự án **WeatherNow** triển khai theo mô hình **client–server phân tán**, trong đó phân hệ chính do nhóm phát triển là **ứng dụng di động**; các phân hệ còn lại là dịch vụ bên thứ ba:
+
+| Phân hệ | Vai trò | Nền tảng | Công nghệ |
+|---------|---------|----------|-----------|
+| **P1 — Mobile Client** | UI, logic nghiệp vụ, lưu cấu hình, thông báo cục bộ | **Android, iOS** (ưu tiên); có thể mở rộng Web/Desktop nhờ Flutter | Flutter / Dart |
+| **P2 — Weather API** | Cung cấp dữ liệu thời tiết thời gian thực | Cloud (OpenWeatherMap) | REST/HTTPS, JSON |
+| **P3 — AI API** | Trả lời hỏi đáp theo ngữ cảnh thời tiết | Cloud (Google Gemini) | REST/HTTPS, JSON |
+| **P4 — Backend (tương lai)** | Proxy API, cache, quản lý API key | Server Linux/Docker | Theo `BÁO CÁO THIẾT KẾ BACKEND.pdf` |
+
+```mermaid
+flowchart LR
+    subgraph Mobile["P1: Mobile — Android / iOS"]
+        App[WeatherNow App]
+    end
+    subgraph Cloud["P2 + P3: Dịch vụ đám mây"]
+        OWM[OpenWeatherMap]
+        GEM[Gemini]
+    end
+    App -->|HTTPS GET| OWM
+    App -->|HTTPS POST| GEM
+```
+
+**Giải thích:** Phiên bản bài tập lớn **không triển khai phân hệ Web hay Desktop** nhưng **cùng một mã nguồn Flutter** có thể build thêm `flutter build web` / `flutter build windows` khi cần — đáp ứng yêu cầu mô tả nền tảng triển khai đa phân hệ của đề thi.
+
+### 2.6.2. Bảng chức năng — đối chiếu đề bài mã đề 36
+
+| STT | Yêu cầu đề bài | Module / màn hình | Trạng thái |
+|-----|----------------|-------------------|------------|
+| 1 | Hiển thị thời tiết hiện tại | `HomeScreen`, `WeatherController` | Hoàn thành (API) |
+| 2 | Dự báo giờ / tuần | `HomeScreen`, `WeatherData` | Hoàn thành (giờ/tuần: demo + mở rộng API) |
+| 3 | Tìm kiếm địa điểm | `SearchScreen`, `SearchController` | Hoàn thành |
+| 4 | Nhắc nhở thời tiết thất thường | `AlertScreen`, `NotificationService` | Hoàn thành |
+| 5 | Tìm kiếm kết hợp gợi ý | `smartTips`, AI Assistant | Hoàn thành |
+| 6 | Tùy chỉnh cá nhân (°C/°F, bật cảnh báo) | `AlertScreen`, SharedPreferences | Một phần (bật/tắt cảnh báo; °C cố định metric) |
+
+### 2.6.3. Nền tảng triển khai từng phân hệ
+
+| Nền tảng | Phân hệ triển khai | Ghi chú |
+|----------|-------------------|---------|
+| **Mobile — Android** | P1 (APK/AAB) | API 21+, quyền `INTERNET`, `POST_NOTIFICATIONS` |
+| **Mobile — iOS** | P1 (IPA) | iOS 12+, quyền notification qua Darwin API |
+| **Web** | Chưa triển khai | Flutter hỗ trợ; P2/P3 gọi trực tiếp từ browser (CORS cần proxy) |
+| **Desktop** | Chưa triển khai | `linux/`, `macos/`, `windows/` có trong project template |
+
+
+
+## 2.7. Kiến trúc phần mềm và thiết kế lớp *(Tiêu chí 2.3)*
+
+### 2.7.1. Mô hình kiến trúc: ba lớp (3-Layer Architecture)
+
+Ứng dụng áp dụng kiến trúc **ba lớp** tương đương chuẩn SE:
+
+| Tầng | Tên lớp | Thư mục / thành phần | Trách nhiệm |
+|------|---------|----------------------|-------------|
+| **Presentation** | Lớp giao diện | `screens/`, `widgets/`, `theme/` | Hiển thị, nhận sự kiện người dùng |
+| **Business / Application** | Lớp nghiệp vụ | `controllers/` | Điều phối luồng, trạng thái, quy tắc cảnh báo |
+| **Data** | Lớp dữ liệu | `services/`, `models/` | Gọi API, parse JSON, thông báo, prefs |
+
+```mermaid
+flowchart TB
+    subgraph Presentation["Tầng Presentation"]
+        HS[HomeScreen]
+        SS[SearchScreen]
+        AS[AlertScreen]
+    end
+    subgraph Business["Tầng Business — Controllers"]
+        WC[WeatherController]
+        SC[SearchController]
+        AC[AlertController]
+        HC[HomeController]
+        AIC[AIController]
+    end
+    subgraph Data["Tầng Data"]
+        WS[WeatherService]
+        NS[NotificationService]
+        WM[WeatherInfo Model]
+        SP[(SharedPreferences)]
+    end
+    HS --> WC
+    SS --> SC
+    AS --> AC
+    WC --> WS
+    WC --> NS
+    AC --> NS
+    AC --> SP
+    WS --> WM
+```
+
+**Mô hình triển khai tổng thể:** **Monolithic mobile application** — toàn bộ logic client đóng gói trong một APK/IPA; **không** dùng microservices phía client. Microservices chỉ xuất hiện ở phía nhà cung cấp (OpenWeatherMap, Google Cloud).
+
+### 2.7.2. Thiết kế lớp (class) chi tiết
+
+#### Lớp Model (`lib/models/weather_model.dart`)
+
+| Lớp / Enum | Thuộc tính chính | Phương thức / hành vi |
+|------------|------------------|------------------------|
+| `WeatherCondition` | enum 9 trạng thái | `icon`, `color`, `label` |
+| `WeatherInfo` | cityName, temperature, humidity, condition, isNight... | `fromJson()`, `smartTips` |
+| `HourlyForecast` | time, temperature, rainChance | — |
+| `DailyForecast` | day, tempMin, tempMax | — |
+| `AlertSetting` | title, description, isEnabled | — |
+| `WeatherData` | static demo data | `alertSettings`, `cities` |
+
+#### Lớp Service
+
+| Lớp | Phụ thuộc | Phương thức công khai |
+|-----|-----------|----------------------|
+| `WeatherService` | `http`, `WeatherInfo` | `fetchWeather(String cityName)` |
+| `NotificationService` | `flutter_local_notifications`, `timezone` | `init()`, `showNotification()`, `scheduleDailyGreeting()` |
+
+#### Lớp Controller (ViewModel)
+
+| Lớp | Kế thừa / mixin | Observable state |
+|-----|-----------------|------------------|
+| `WeatherController` | `GetxController` | `weather`, `isLoading` |
+| `SearchController` | `GetxController` | `results`, `history`, `isSearching` |
+| `AlertController` | `GetxController` | `settings` |
+| `HomeController` | — | `timeStream`, animations |
+| `AIController` | — | (stateless service class) |
+
+#### Lớp View (Screen)
+
+| Lớp | Controller liên kết |
+|-----|---------------------|
+| `HomeScreen` | `HomeController`, `WeatherController` |
+| `SearchScreen` | `SearchController` |
+| `AlertScreen` | `AlertController` |
+| `MainShell` | `WeatherController` — điều hướng 3 tab |
+
+### 2.7.3. Sơ đồ tuần tự — lớp tương tác (trích)
+
+```mermaid
+classDiagram
+    class WeatherInfo {
+        +String cityName
+        +double temperature
+        +WeatherCondition condition
+        +fromJson()
+    }
+    class WeatherService {
+        +fetchWeather()
+    }
+    class WeatherController {
+        +Rx~WeatherInfo~ weather
+        +fetchCurrentWeather()
+    }
+    class HomeScreen {
+        +build()
+    }
+    HomeScreen --> WeatherController : Obx
+    WeatherController --> WeatherService
+    WeatherService ..> WeatherInfo : creates
+```
+
+## 2.8. Thiết kế UI/UX theo nền tảng *(Tiêu chí 2.3)*
+
+### 2.8.1. Nguyên tắc UX
+
+- **Một tay (thumb zone):** thanh điều hướng dưới cùng, FAB “Hỏi AI” lệch trên nav bar.
+- **Phản hồi tức thì:** `HapticFeedback`, skeleton/loading khi `isLoading`.
+- **Ngữ cảnh trực quan:** icon thời tiết + gradient ngày/đêm theo `isNight`.
+
+### 2.8.2. Thiết kế trên Android
+
+| Thành phần | Thiết kế | Lý do |
+|------------|----------|-------|
+| Navigation | Bottom bar 3 tab, `IndexedStack` | Giữ state, chuyển tab nhanh |
+| Thông báo | Channel `weather_alerts_channel`, importance max | Hiển thị heads-up cảnh báo mưa |
+| System UI | `SystemChrome` đổi màu status bar | Đồng bộ theme sáng/tối |
+| Typography | Google Fonts Nunito | Dễ đọc, thân thiện |
+
+### 2.8.3. Thiết kế trên iOS
+
+| Thành phần | Thiết kế | Khác biệt so với Android |
+|------------|----------|---------------------------|
+| Icon | `CupertinoIcons` | Đồng bộ phong cách iOS |
+| Thông báo | `DarwinNotificationDetails` | Xin quyền alert/badge/sound khi lưu cài đặt |
+| Safe Area | `SafeArea` trong scroll | Tránh notch/Dynamic Island |
+
+### 2.8.4. Wireframe / Mockup
+
+Tham chiếu file `docs/weather_app_mockup.drawio.png`. Ba màn hình tương ứng 3 tab: Trang chủ (thời tiết + dự báo), Tìm kiếm (ô nhập + danh sách), Thông báo (toggle cảnh báo).
+
+> **Khi in báo cáo:** chèn mockup + screenshot Android và iOS cạnh nhau cho cùng một màn hình.
+
+## 2.9. Mô hình triển khai (Deployment Model) *(Tiêu chí 2.3)*
+
+| Hạng mục | Lựa chọn của dự án | Giải thích |
+|----------|-------------------|------------|
+| Kiểu kiến trúc phần mềm | **Monolithic client** | Một package Flutter, một process trên thiết bị |
+| Kiểu triển khai backend | **SaaS bên thứ ba** (không tự host) | Giảm độ phức tạp BTL |
+| Mô hình tương lai | **2-tier + API Gateway** (backend PDF) | Client → Backend nhóm → OpenWeatherMap/Gemini |
+| Đóng gói Android | APK / AAB release | Google Play hoặc cài trực tiếp |
+| Đóng gói iOS | IPA qua Xcode | TestFlight / App Store |
+| CI/CD (gợi ý) | GitHub Actions + `flutter test` | Chưa triển khai trong scope BTL |
+
+```mermaid
+flowchart TB
+    subgraph Device["Thiết bị người dùng"]
+        APK["WeatherNow.apk / .ipa
+(Monolithic Flutter)"]
+    end
+    subgraph Internet["Internet"]
+        OWM[OpenWeatherMap]
+        GEM[Gemini API]
+    end
+    APK --> OWM
+    APK --> GEM
+```
+
+## 2.10. Mô hình dữ liệu và giải pháp lưu trữ *(Tiêu chí 2.4)*
+
+### 2.10.1. Mô hình dữ liệu nghiệp vụ (conceptual)
+
+```mermaid
+erDiagram
+    CITY ||--o{ WEATHER_SNAPSHOT : has
+    WEATHER_SNAPSHOT ||--|{ HOURLY_FORECAST : contains
+    WEATHER_SNAPSHOT ||--|{ DAILY_FORECAST : contains
+    USER_SETTINGS ||--|{ ALERT_SETTING : configures
+
+    CITY {
+        string cityName
+        string country
+    }
+    WEATHER_SNAPSHOT {
+        float temperature
+        int humidity
+        string description
+        enum condition
+        bool isNight
+    }
+    ALERT_SETTING {
+        string title
+        bool isEnabled
+    }
+```
+
+### 2.10.2. Mô hình dữ liệu vật lý — API OpenWeatherMap (JSON)
+
+| Trường JSON | Kiểu | Ánh xạ vào `WeatherInfo` |
+|-------------|------|---------------------------|
+| `name` | string | `cityName` (đã chuẩn hóa bỏ “Thành phố”) |
+| `main.temp` | number | `temperature` |
+| `main.humidity` | int | `humidity` |
+| `weather[0].main`, `weather[0].id` | string, int | `condition` qua `_mapMainToCondition` |
+| `sys.sunrise`, `sys.sunset`, `dt` | int | tính `isNight` |
+
+### 2.10.3. Lưu trữ trên thiết bị — SharedPreferences
+
+| Key | Kiểu lưu | Cấu trúc | Nghiệp vụ |
+|-----|----------|----------|-----------|
+| `weather_alerts` | `List<String>` | 5 phần tử `'true'`/`'false'` | Trạng thái 5 `AlertSetting` |
+
+**Lý do chọn SharedPreferences thay vì SQLite/Hive:**
+
+- Dữ liệu cấu hình nhỏ, cấu trúc đơn giản (danh sách boolean).
+- Không cần truy vấn phức tạp hay quan hệ nhiều bảng.
+- API đồng bộ nhẹ, phù hợp Android và iOS qua plugin chính thức.
+
+### 2.10.4. So sánh giải pháp lưu trữ theo nền tảng
+
+| Nền tảng | Công nghệ lưu trữ | File / vị trí | Dữ liệu lưu |
+|----------|-------------------|---------------|-------------|
+| Android | SharedPreferences → XML | `/data/data/<package>/shared_prefs/` | `weather_alerts` |
+| iOS | UserDefaults (qua plugin) | Sandbox app | `weather_alerts` |
+| Web (mở rộng) | localStorage | Browser | Cùng key qua `shared_preferences` |
+| Desktop (mở rộng) | File prefs | OS-specific path | Cùng API plugin |
+
+### 2.10.5. Dữ liệu không lưu persistent
+
+- Lịch sử tìm kiếm (`SearchController.history`) — **RAM**, mất khi thoát app (có thể mở rộng lưu prefs).
+- `WeatherInfo` hiện tại — **bộ nhớ** qua `Rxn<WeatherInfo>`, fetch lại từ API.
+
+
 # CHƯƠNG 3. THỰC NGHIỆM
 
 ## 3.1. Kiến trúc ứng dụng
@@ -567,6 +879,31 @@ Theo tài liệu thiết kế backend, có thể triển khai server (Node.js/Sp
 | Dung lượng APK release | [ĐIỀN] MB | `flutter build apk --release` |
 
 ### 3.3.6. Hạn chế phát hiện khi kiểm thử
+
+### 3.3.7. Kiểm thử theo nền tảng Android và iOS *(Tiêu chí 2.5)*
+
+| ID | Nền tảng | Chức năng | Cách thực hiện | Kết quả mong đợi | Kết quả thực tế | Đánh giá |
+|----|----------|-----------|----------------|------------------|-----------------|----------|
+| TP-A01 | Android | Khởi động app | Cài APK, mở app | Load Hà Nội, không crash | [ĐIỀN] | Pass/Fail |
+| TP-A02 | Android | Thông báo mưa | Bật cảnh báo, fetch thành phố mưa | Notification channel hiện | [ĐIỀN] | Pass/Fail |
+| TP-A03 | Android | Quyền POST_NOTIFICATIONS | Android 13+, lưu cài đặt | Dialog xin quyền | [ĐIỀN] | Pass/Fail |
+| TP-I01 | iOS | Khởi động app | Xcode run trên simulator/device | UI Safe Area đúng | [ĐIỀN] | Pass/Fail |
+| TP-I02 | iOS | Thông báo | Bật cảnh báo, lưu | Alert permission | [ĐIỀN] | Pass/Fail |
+| TP-I03 | iOS | Chuyển tab | 3 tab bottom | Không mất state | [ĐIỀN] | Pass/Fail |
+
+### 3.3.8. Kiểm thử yêu cầu phi chức năng *(Tiêu chí 2.5)*
+
+| Mã NFR | Loại | Tiêu chí | Phương pháp đo | Kết quả | Đạt/Không |
+|--------|------|----------|----------------|---------|-----------|
+| NFR-01 | Hiệu năng | API ≤ 10s | `timeout` trong WeatherService | [ĐIỀN]s | [ ] |
+| NFR-02 | Hiệu năng | FPS UI ~ 60 | Quan sát animation Home | Mượt / Giật | [ ] |
+| NFR-03 | Khả dụng | Tiếng Việt mô tả thời tiết | `lang=vi` | Đúng tiếng Việt | [ ] |
+| NFR-04 | Tin cậy | Mất mạng | Tắt Wi-Fi, search | Snackbar lỗi rõ | [ ] |
+| NFR-05 | Bảo mật | HTTPS | Charles/proxy | Chỉ HTTPS | [ ] |
+| NFR-06 | Khả dụng | Tương thích màn hình | Phone 5.5"–6.7" | Không vỡ layout | [ ] |
+
+**Kết luận kiểm thử (mẫu — nhóm điều chỉnh sau khi test thật):** [ĐIỀN: ví dụ "12/12 test chức năng Pass trên Android emulator; 10/12 Pass trên iOS simulator do …"]
+
 
 - Dự báo giờ/tuần một phần dùng **dữ liệu mẫu** trong `WeatherData`, chưa đồng bộ 100% với API forecast.
 - Chỉ số UV trong model đang mặc định `0` — cần API bổ sung để cảnh báo UV hoạt động đúng.

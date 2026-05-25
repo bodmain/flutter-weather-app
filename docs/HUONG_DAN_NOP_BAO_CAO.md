@@ -30,11 +30,18 @@ Tìm và thay tất cả `[ĐIỀN THÔNG TIN]`, `[ĐIỀN]`, `[MSSV]` trong fil
 - Đặt **Phụ lục** và **Tài liệu tham khảo** sau Kết luận (không tính vào 30–60 trang theo đề bài).
 - Link GitHub: https://github.com/bodmain/flutter-weather-app
 
-## Bước 5: Kiểm tra trước khi nộp
+## Bước 5: Đối chiếu phiếu chấm (6 điểm)
 
+Mở `DOI_CHIEU_TIEU_CHI_CHAM.md` — đảm bảo có mục 2.6–2.10, 1.10, 3.3.7–3.3.8 trong báo cáo.
+
+## Bước 6: Kiểm tra trước khi nộp
+
+- [ ] Có bảng đối chiếu tiêu chí chấm
 - [ ] Đủ các chương theo đề: Mở đầu, Chương 1–3, Kết luận
 - [ ] Có phân công nhóm chi tiết
 - [ ] Có sơ đồ (kiến trúc, sequence, use case)
+- [ ] Có §2.6 phân hệ, §2.7 kiến trúc 3 lớp, §2.10 dữ liệu
+- [ ] Có kiểm thử Android + iOS + phi chức năng
 - [ ] Có bảng kiểm thử đã điền kết quả
 - [ ] Link mã nguồn trong Phụ lục
 - [ ] Không để API key thật trong báo cáo in (chỉ mô tả cách cấu hình)
