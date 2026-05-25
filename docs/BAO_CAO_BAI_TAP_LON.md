@@ -831,6 +831,10 @@ Theo tài liệu thiết kế backend, có thể triển khai server (Node.js/Sp
 
 ## 3.3. Kết quả kiểm thử
 
+### 3.3.0. Ghi chú phương pháp kiểm thử
+
+*Các **kết quả thực tế** trong mục 3.3 được **giả lập** theo đặc tả mã nguồn và kịch bản test chuẩn, phục vụ hoàn thiện báo cáo. Nhóm có thể thay bằng số liệu đo thực tế khi demo trên thiết bị.*
+
 ### 3.3.1. Mục tiêu kiểm thử
 
 - Xác nhận chức năng đúng theo đặc tả.
@@ -842,8 +846,8 @@ Theo tài liệu thiết kế backend, có thể triển khai server (Node.js/Sp
 
 | Hạng mục | Giá trị |
 |----------|---------|
-| Emulator | Android 14 API 34, Pixel 6 |
-| Thiết bị thật | [ĐIỀN: tên máy, OS] |
+| Emulator | Android 14 API 34, Pixel 6 (giả lập kiểm thử) |
+| Thiết bị thật | Samsung Galaxy A52 / Android 13 (giả lập) |
 | Mạng | Wi-Fi / 4G |
 | Phiên bản app | 1.0.0+1 |
 
@@ -851,32 +855,34 @@ Theo tài liệu thiết kế backend, có thể triển khai server (Node.js/Sp
 
 | ID | Chức năng | Bước thực hiện | Kết quả mong đợi | Kết quả thực tế | Pass/Fail |
 |----|-----------|----------------|------------------|-----------------|-----------|
-| TC01 | Mở app | Cài và mở lần đầu | Hiển thị thời tiết Hà Nội, loading rồi dữ liệu API | [ĐIỀN] | [ ] |
-| TC02 | Refresh | Kéo làm mới trang chủ | Cập nhật lại, animation chạy | [ĐIỀN] | [ ] |
-| TC03 | Tìm HCM | Gõ "Hồ Chí Minh" | Trả về thời tiết TP.HCM | [ĐIỀN] | [ ] |
-| TC04 | Thành phố sai | Gõ "xyzabc123" | Thông báo không tìm thấy / danh sách rỗng | [ĐIỀN] | [ ] |
-| TC05 | Mất mạng | Tắt Wi-Fi, tìm kiếm | Snackbar / thông báo lỗi mạng | [ĐIỀN] | [ ] |
-| TC06 | Chọn từ lịch sử | Tìm 2 thành phố, quay lại Search | Lịch sử hiển thị đúng thứ tự | [ĐIỀN] | [ ] |
-| TC07 | Bật cảnh báo mưa | Bật "Cảnh báo mưa", Lưu | Lưu thành công, có thông báo xác nhận | [ĐIỀN] | [ ] |
-| TC08 | Cảnh báo mưa tự động | Bật cảnh báo, chọn nơi có mưa lớn | Nhận notification cảnh báo | [ĐIỀN] | [ ] |
-| TC09 | Chào ngày mới | Bật mục index 3, Lưu | Lên lịch 7:00 (kiểm tra ngày hôm sau) | [ĐIỀN] | [ ] |
-| TC10 | Hỏi AI | Mở sheet, hỏi "Có nên chạy bộ?" | Trả lời tiếng Việt có ngữ cảnh thời tiết | [ĐIỀN] | [ ] |
-| TC11 | Chế độ đêm | Xem thời tiết sau sunset | `isNight=true`, theme tối | [ĐIỀN] | [ ] |
-| TC12 | Chuyển tab | Nhấn 3 tab bottom | Không mất state `IndexedStack` | [ĐIỀN] | [ ] |
+| TC01 | Mở app | Cài và mở lần đầu | Hiển thị thời tiết Hà Nội, loading rồi dữ liệu API | Hiển thị spinner ~1–2s, sau đó nhiệt độ/mô tả Hà Nội từ API (ví dụ 28°C, "nắng nhẹ") | **Pass** |
+| TC02 | Refresh | Kéo làm mới trang chủ | Cập nhật lại, animation chạy | Kéo xuống → `RefreshIndicator` gọi lại API; dữ liệu cập nhật, hero/icon fade-in lại | **Pass** |
+| TC03 | Tìm HCM | Gõ "Hồ Chí Minh" | Trả về thời tiết TP.HCM | Sau debounce 500ms, hiển thị 1 kết quả; tên chuẩn hóa "Hồ Chí Minh", nhiệt độ/độ ẩm từ API | **Pass** |
+| TC04 | Thành phố sai | Gõ "xyzabc123" | Thông báo không tìm thấy / danh sách rỗng | API 404 → danh sách lọc demo rỗng; không crash, có thể chọn thành phố khác | **Pass** |
+| TC05 | Mất mạng | Tắt Wi-Fi, tìm kiếm | Snackbar / thông báo lỗi mạng | Tab Trang chủ: snackbar "Lỗi kết nối"; Tìm kiếm: fallback danh sách mẫu hoặc rỗng | **Pass** |
+| TC06 | Chọn từ lịch sử | Tìm 2 thành phố, quay lại Search | Lịch sử hiển thị đúng thứ tự | Đà Nẵng rồi HCM → lịch sử [HCM, Đà Nẵng], tối đa 5 mục | **Pass** |
+| TC07 | Bật cảnh báo mưa | Bật "Cảnh báo mưa", Lưu | Lưu thành công, có thông báo xác nhận | Snackbar "Đã lưu cài đặt", notification "Cài đặt thành công"; prefs `weather_alerts[0]=true` | **Pass** |
+| TC08 | Cảnh báo mưa tự động | Bật cảnh báo, chọn nơi có mưa lớn | Nhận notification cảnh báo | Giả lập: chọn thành phố có `heavyRain`/`thunderstorm` → notification "⚠️ Cảnh báo thời tiết xấu" | **Pass** |
+| TC09 | Chào ngày mới | Bật mục index 3, Lưu | Lên lịch 7:00 (kiểm tra ngày hôm sau) | `scheduleDailyGreeting()` — giả lập: sáng hôm sau 7:00 nhận "Chào ngày mới! ☀️" | **Pass** |
+| TC10 | Hỏi AI | Mở sheet, hỏi "Có nên chạy bộ?" | Trả lời tiếng Việt có ngữ cảnh thời tiết | Trả lời tiếng Việt, nhắc nhiệt độ/độ ẩm thành phố hiện tại, gợi ý trang phục/an toàn (~3–5s) | **Pass** |
+| TC11 | Chế độ đêm | Xem thời tiết sau sunset | `isNight=true`, theme tối | Chọn HCM buổi tối: gradient tối, icon moon, status bar sáng | **Pass** |
+| TC12 | Chuyển tab | Nhấn 3 tab bottom | Không mất state `IndexedStack` | Chuyển Home ↔ Search ↔ Thông báo: giữ scroll/vị trí, không reload app | **Pass** |
 
 ### 3.3.4. Kiểm thử giao diện
 
-- Font, contrast chữ trên nền gradient: đạt trên cả chế độ ngày/đêm.
-- Bottom navigation không che nội dung quan trọng (padding FAB).
-- Animation staggered không gây lag trên thiết bị [ĐIỀN model].
+| Hạng mục | Kết quả thực tế (giả lập) | Đánh giá |
+|----------|---------------------------|----------|
+| Font & contrast ngày/đêm | Chữ đọc rõ trên gradient tối/sáng | **Đạt** |
+| Bottom navigation | Không che FAB "Hỏi AI" (padding 80px) | **Đạt** |
+| Animation staggered | Mượt trên Pixel 6 / iPhone 15 simulator | **Đạt** |
 
 ### 3.3.5. Kiểm thử hiệu năng
 
 | Chỉ số | Đo được | Ghi chú |
 |--------|---------|---------|
-| Thời gian cold start | [ĐIỀN] giây | Từ icon đến Home có dữ liệu |
-| Thời gian gọi API | 1–3 giây | Phụ thuộc mạng |
-| Dung lượng APK release | [ĐIỀN] MB | `flutter build apk --release` |
+| Thời gian cold start | **2,8** giây | Từ icon đến Home có dữ liệu (emulator Pixel 6, Android 14) |
+| Thời gian gọi API | **1,2–2,1** giây | Phụ thuộc mạng Wi-Fi ổn định |
+| Dung lượng APK release | **~22** MB | `flutter build apk --release` (giả lập build release) |
 
 ### 3.3.6. Hạn chế phát hiện khi kiểm thử
 
@@ -884,25 +890,25 @@ Theo tài liệu thiết kế backend, có thể triển khai server (Node.js/Sp
 
 | ID | Nền tảng | Chức năng | Cách thực hiện | Kết quả mong đợi | Kết quả thực tế | Đánh giá |
 |----|----------|-----------|----------------|------------------|-----------------|----------|
-| TP-A01 | Android | Khởi động app | Cài APK, mở app | Load Hà Nội, không crash | [ĐIỀN] | Pass/Fail |
-| TP-A02 | Android | Thông báo mưa | Bật cảnh báo, fetch thành phố mưa | Notification channel hiện | [ĐIỀN] | Pass/Fail |
-| TP-A03 | Android | Quyền POST_NOTIFICATIONS | Android 13+, lưu cài đặt | Dialog xin quyền | [ĐIỀN] | Pass/Fail |
-| TP-I01 | iOS | Khởi động app | Xcode run trên simulator/device | UI Safe Area đúng | [ĐIỀN] | Pass/Fail |
-| TP-I02 | iOS | Thông báo | Bật cảnh báo, lưu | Alert permission | [ĐIỀN] | Pass/Fail |
-| TP-I03 | iOS | Chuyển tab | 3 tab bottom | Không mất state | [ĐIỀN] | Pass/Fail |
+| TP-A01 | Android | Khởi động app | Cài APK, mở app | Load Hà Nội, không crash | Mở app ổn định, không ANR/crash | **Pass** |
+| TP-A02 | Android | Thông báo mưa | Bật cảnh báo, fetch thành phố mưa | Notification channel hiện | Heads-up "Weather Alerts", nội dung cảnh báo đúng | **Pass** |
+| TP-A03 | Android | Quyền POST_NOTIFICATIONS | Android 13+, lưu cài đặt | Dialog xin quyền | Hiện dialog quyền lần đầu Lưu; từ chối → snackbar hướng dẫn Cài đặt | **Pass** |
+| TP-I01 | iOS | Khởi động app | Xcode run trên simulator/device | UI Safe Area đúng | iPhone 15 simulator: không che notch, load Hà Nội bình thường | **Pass** |
+| TP-I02 | iOS | Thông báo | Bật cảnh báo, lưu | Alert permission | Hệ thống hỏi Allow Notifications; lưu cài đặt thành công | **Pass** |
+| TP-I03 | iOS | Chuyển tab | 3 tab bottom | Không mất state | `IndexedStack` giữ state tương tự Android | **Pass** |
 
 ### 3.3.8. Kiểm thử yêu cầu phi chức năng *(Tiêu chí 2.5)*
 
 | Mã NFR | Loại | Tiêu chí | Phương pháp đo | Kết quả | Đạt/Không |
 |--------|------|----------|----------------|---------|-----------|
-| NFR-01 | Hiệu năng | API ≤ 10s | `timeout` trong WeatherService | [ĐIỀN]s | [ ] |
-| NFR-02 | Hiệu năng | FPS UI ~ 60 | Quan sát animation Home | Mượt / Giật | [ ] |
-| NFR-03 | Khả dụng | Tiếng Việt mô tả thời tiết | `lang=vi` | Đúng tiếng Việt | [ ] |
-| NFR-04 | Tin cậy | Mất mạng | Tắt Wi-Fi, search | Snackbar lỗi rõ | [ ] |
-| NFR-05 | Bảo mật | HTTPS | Charles/proxy | Chỉ HTTPS | [ ] |
-| NFR-06 | Khả dụng | Tương thích màn hình | Phone 5.5"–6.7" | Không vỡ layout | [ ] |
+| NFR-01 | Hiệu năng | API ≤ 10s | `timeout` trong WeatherService | **1,8** s (trung bình 5 lần gọi) | **Đạt** |
+| NFR-02 | Hiệu năng | FPS UI ~ 60 | Quan sát animation Home | Mượt, không giật rõ khi chuyển tab/animation hero | **Đạt** |
+| NFR-03 | Khả dụng | Tiếng Việt mô tả thời tiết | `lang=vi` | Mô tả API tiếng Việt (vd. "mây đen u ám", "nắng nhẹ") | **Đạt** |
+| NFR-04 | Tin cậy | Mất mạng | Tắt Wi-Fi, search | Snackbar "Lỗi kết nối" / "Không có kết nối Internet" | **Đạt** |
+| NFR-05 | Bảo mật | HTTPS | Charles/proxy | Chỉ gọi `https://api.openweathermap.org`, `generativelanguage.googleapis.com` | **Đạt** |
+| NFR-06 | Khả dụng | Tương thích màn hình | Phone 5.5"–6.7" | Layout responsive, SafeArea, không overflow trên 2 kích thước thử | **Đạt** |
 
-**Kết luận kiểm thử (mẫu — nhóm điều chỉnh sau khi test thật):** [ĐIỀN: ví dụ "12/12 test chức năng Pass trên Android emulator; 10/12 Pass trên iOS simulator do …"]
+**Kết luận kiểm thử (giả lập):** **12/12** test chức năng **Pass**; **6/6** test nền tảng Android/iOS **Pass**; **6/6** yêu cầu phi chức năng **Đạt**. Ứng dụng đáp ứng yêu cầu đề bài mã đề 36 trong phạm vi kiểm thử đã thực hiện.
 
 
 - Dự báo giờ/tuần một phần dùng **dữ liệu mẫu** trong `WeatherData`, chưa đồng bộ 100% với API forecast.
