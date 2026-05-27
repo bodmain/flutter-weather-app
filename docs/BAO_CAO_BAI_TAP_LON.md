@@ -951,6 +951,158 @@ Qua quá trình thực hiện, nhóm củng cố kiến thức về kiến trúc
 
 # PHỤ LỤC
 
+Phần phụ lục bổ sung tài liệu tra cứu, liên kết kỹ thuật và kho mã nguồn phục vụ giảng viên đối chiếu khi chấm bài và vấn đáp.
+
+---
+
+## Phụ lục 1. Tài liệu và link tham khảo
+
+### 1.1. Tài liệu chính thức — Framework & ngôn ngữ
+
+| STT | Tên tài liệu | Đường dẫn | Ghi chú sử dụng trong dự án |
+|-----|--------------|-----------|------------------------------|
+| 1 | Flutter — Tài liệu chính thức | https://docs.flutter.dev | Cài đặt SDK, widget, build Android/iOS |
+| 2 | Dart — Language tour | https://dart.dev/guides | Cú pháp, async/await, JSON |
+| 3 | Flutter — Codelab viết app đầu tiên | https://docs.flutter.dev/get-started/codelab | Tham khảo cấu trúc project |
+| 4 | Flutter — Build và release | https://docs.flutter.dev/deployment | Đóng gói APK/IPA (Chương 3) |
+| 5 | Material Design 3 | https://m3.material.io | Nguyên tắc UI/UX |
+| 6 | Apple Human Interface Guidelines | https://developer.apple.com/design/human-interface-guidelines | UI tab bar, notification iOS |
+
+### 1.2. Thư viện lập trình (packages) — pub.dev
+
+| STT | Package | Link | Vai trò trong WeatherNow |
+|-----|---------|------|--------------------------|
+| 1 | get | https://pub.dev/packages/get | Quản lý trạng thái, snackbar, DI |
+| 2 | http | https://pub.dev/packages/http | Gọi REST API thời tiết & Gemini |
+| 3 | shared_preferences | https://pub.dev/packages/shared_preferences | Lưu cài đặt cảnh báo |
+| 4 | flutter_local_notifications | https://pub.dev/packages/flutter_local_notifications | Thông báo cục bộ |
+| 5 | timezone | https://pub.dev/packages/timezone | Lên lịch 7:00 sáng |
+| 6 | google_fonts | https://pub.dev/packages/google_fonts | Font Nunito |
+| 7 | google_generative_ai | https://pub.dev/packages/google_generative_ai | SDK Gemini (tham khảo) |
+| 8 | flutter_markdown | https://pub.dev/packages/flutter_markdown | Hiển thị câu trả lời AI |
+
+### 1.3. API & dịch vụ bên ngoài
+
+| STT | Dịch vụ | Link tài liệu | Endpoint / mục đích |
+|-----|---------|---------------|---------------------|
+| 1 | OpenWeatherMap — Current Weather | https://openweathermap.org/current | `GET /data/2.5/weather` — dữ liệu thời tiết |
+| 2 | OpenWeatherMap — Đăng ký API key | https://home.openweathermap.org/api_keys | Lấy `appid` miễn phí |
+| 3 | Google AI — Gemini API | https://ai.google.dev/gemini-api/docs | Trợ lý hỏi đáp thời tiết |
+| 4 | Google AI Studio | https://aistudio.google.com | Tạo API key Gemini |
+
+### 1.4. Tài liệu nội bộ nhóm (trong repository)
+
+| STT | Tên file | Đường dẫn trong repo | Nội dung |
+|-----|----------|----------------------|----------|
+| 1 | Mô tả chức năng chi tiết | `docs/Chuc_nang_chi_tiet.md` | Phân tích chức năng đề bài |
+| 2 | Mockup giao diện | `docs/weather_app_mockup.drawio.png` | Thiết kế 3 màn hình |
+| 3 | Báo cáo thiết kế Backend | `docs/BÁO CÁO THIẾT KẾ BACKEND.pdf` | Hướng mở rộng server |
+| 4 | Báo cáo bài tập lớn (bản Markdown) | `docs/BAO_CAO_BAI_TAP_LON.md` | Toàn văn báo cáo |
+| 5 | Danh mục Bảng — Hình | `docs/DANH_MUC_BANG_HINH.md` | Đánh số bảng/hình |
+| 6 | Đối chiếu tiêu chí chấm | `docs/DOI_CHIEU_TIEU_CHI_CHAM.md` | Checklist nộp Elearning |
+
+### 1.5. Tài liệu tham khảo mở rộng (sách / bài báo)
+
+| STT | Tác giả | Tên tài liệu | Ghi chú |
+|-----|---------|--------------|---------|
+| 1 | Martin Fowler | *Patterns of Enterprise Application Architecture* | Kiến trúc tách lớp, Service Layer |
+| 2 | Google | Flutter architectural overview | https://docs.flutter.dev/resources/architectural-overview |
+| 3 | REST API Tutorial | https://restfulapi.net | Khái niệm REST dùng trong WeatherService |
+
+---
+
+## Phụ lục 2. Link mã nguồn (GitHub)
+
+### 2.1. Thông tin repository
+
+| Hạng mục | Nội dung |
+|----------|----------|
+| **Tên dự án** | WeatherNow — Ứng dụng thời tiết thông minh |
+| **Mã đề** | 36 — Chuyên đề 2 |
+| **Nền tảng** | Flutter (Android, iOS) |
+| **URL repository** | **https://github.com/bodmain/flutter-weather-app** |
+| **Nhánh chính** | `main` |
+| **Nhánh phát triển báo cáo** | `cursor/bao-cao-bai-tap-lon-83eb` (nếu có) |
+| **Giấy phép** | Theo quy định repository (mặc định GitHub) |
+
+### 2.2. Cấu trúc thư mục mã nguồn trên GitHub
+
+```
+flutter-weather-app/
+├── docs/                          # Tài liệu dự án, báo cáo, mockup
+│   ├── BAO_CAO_BAI_TAP_LON.md
+│   ├── Chuc_nang_chi_tiet.md
+│   ├── weather_app_mockup.drawio.png
+│   └── BÁO CÁO THIẾT KẾ BACKEND.pdf
+├── src/                           # Mã nguồn Flutter
+│   ├── lib/
+│   │   ├── main.dart              # Entry point, điều hướng 3 tab
+│   │   ├── controllers/           # Weather, Search, Alert, AI, Home
+│   │   ├── models/                # weather_model.dart
+│   │   ├── screens/               # home, search, alert
+│   │   ├── services/              # API thời tiết, notification
+│   │   ├── theme/                 # app_theme.dart
+│   │   └── widgets/               # glass_card, AI sheet, painters
+│   ├── android/                   # Cấu hình build Android
+│   ├── ios/                       # Cấu hình build iOS
+│   └── pubspec.yaml               # Dependencies
+└── README.md
+```
+
+### 2.3. Hướng dẫn clone và chạy mã nguồn
+
+**Bước 1 — Clone repository:**
+
+```bash
+git clone https://github.com/bodmain/flutter-weather-app.git
+cd flutter-weather-app/src
+```
+
+**Bước 2 — Cài đặt dependency:**
+
+```bash
+flutter pub get
+```
+
+**Bước 3 — Cấu hình API key** (trong `lib/services/weather_service.dart` và `lib/controllers/ai_controller.dart`, hoặc dùng biến môi trường):
+
+```bash
+flutter run --dart-define=OWM_KEY=<openweathermap_key> --dart-define=GEMINI_KEY=<gemini_key>
+```
+
+**Bước 4 — Chạy ứng dụng:**
+
+```bash
+flutter run
+```
+
+**Build bản release (Android):**
+
+```bash
+flutter build apk --release
+```
+
+### 2.4. Các commit / phiên bản đáng chú ý
+
+| Thời điểm (tham khảo) | Nội dung commit |
+|------------------------|----------------|
+| Tuần 1 | Hoàn thành tài liệu và mockup giao diện |
+| Tuần 2–3 | Cập nhật UI Home, Search, Notification |
+| Tuần 4 | Báo cáo thiết kế Backend |
+| Tuần 5 | Hoàn thiện trợ lý AI và cảnh báo thời tiết xấu |
+| Nộp BTL | Bổ sung báo cáo, kiểm thử giả lập, phụ lục |
+
+*(Chi tiết lịch sử: https://github.com/bodmain/flutter-weather-app/commits/main)*
+
+### 2.5. Lưu ý khi giảng viên kiểm tra mã nguồn
+
+- Mã ứng dụng nằm trong thư mục **`src/`**, không phải root repository.
+- Cần có kết nối Internet để gọi OpenWeatherMap và Gemini.
+- Trên Android 13+ cần cấp quyền thông báo khi bật cảnh báo lần đầu.
+- **Không** nên đưa API key thật vào slide/báo cáo in; key chỉ cấu hình local khi chạy demo.
+
+---
+
 ## Phụ lục A. Hướng dẫn cấu hình API Key
 
 1. Đăng ký tại [https://openweathermap.org/api](https://openweathermap.org/api) — lấy API key Current Weather.
@@ -1002,32 +1154,22 @@ if (isRainAlertEnabled) {
 | google_fonts | ^6.2.1 | Typography |
 | flutter_markdown | ^0.7.3 | Hiển thị câu trả lời AI |
 
-## Phụ lục D. Link tài liệu và mã nguồn
-
-| Nội dung | Link |
-|----------|------|
-| **Mã nguồn GitHub** | https://github.com/bodmain/flutter-weather-app |
-| Mockup giao diện | `docs/weather_app_mockup.drawio.png` (trong repo) |
-| Mô tả chức năng | `docs/Chuc_nang_chi_tiet.md` |
-| Báo cáo thiết kế Backend | `docs/BÁO CÁO THIẾT KẾ BACKEND.pdf` |
-| Flutter Documentation | https://docs.flutter.dev |
-| OpenWeatherMap API | https://openweathermap.org/current |
-| Google Gemini API | https://ai.google.dev |
-
----
-
 # TÀI LIỆU THAM KHẢO
 
-1. Google (2024–2025). *Flutter documentation*. https://docs.flutter.dev  
-2. Dart Team. *Dart language tour*. https://dart.dev/guides  
-3. OpenWeatherMap. *Current weather data API documentation*. https://openweathermap.org/current  
-4. Google AI. *Gemini API documentation*. https://ai.google.dev  
-5. Jonah Williams et al. *Flutter Local Notifications Plugin*. https://pub.dev/packages/flutter_local_notifications  
-6. Jonatas Borges. *GetX Pattern / State management*. https://pub.dev/packages/get  
-7. Material Design Guidelines. https://m3.material.io  
-8. Apple Human Interface Guidelines. https://developer.apple.com/design/human-interface-guidelines  
-9. Fowler, M. *Patterns of Enterprise Application Architecture* — layered architecture, service layer.  
-10. Nhóm phát triển dự án WeatherNow. *Báo cáo thiết kế Backend — Dự án WeatherNow* (PDF nội bộ nhóm).
+Danh mục dưới đây liệt kê theo chuẩn trích dẫn trong báo cáo (thứ tự xuất hiện / mức độ sử dụng). Các đường link chi tiết xem thêm **Phụ lục 1**.
+
+1. Google. (2025). *Flutter documentation*. https://docs.flutter.dev  
+2. Google. (2025). *Dart language tour*. https://dart.dev/guides  
+3. Google. (2025). *Flutter architectural overview*. https://docs.flutter.dev/resources/architectural-overview  
+4. OpenWeatherMap. (2025). *Current weather data API documentation*. https://openweathermap.org/current  
+5. Google AI. (2025). *Gemini API documentation*. https://ai.google.dev  
+6. MaikuB. (2024). *flutter_local_notifications*. https://pub.dev/packages/flutter_local_notifications  
+7. Jonatas Borges. (2024). *get — State management*. https://pub.dev/packages/get  
+8. Google. (2024). *Material Design 3*. https://m3.material.io  
+9. Apple Inc. (2024). *Human Interface Guidelines*. https://developer.apple.com/design/human-interface-guidelines  
+10. Fowler, M. (2002). *Patterns of Enterprise Application Architecture*. Addison-Wesley.  
+11. Nhóm WeatherNow. (2025). *Báo cáo thiết kế Backend — Dự án WeatherNow*. Tài liệu nội bộ, `docs/BÁO CÁO THIẾT KẾ BACKEND.pdf`.  
+12. Nhóm WeatherNow. (2025). *Mã nguồn ứng dụng WeatherNow*. GitHub. https://github.com/bodmain/flutter-weather-app
 
 ---
 
