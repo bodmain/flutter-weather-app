@@ -923,16 +923,25 @@ Theo tài liệu thiết kế backend, có thể triển khai server (Node.js/Sp
 
 ## 1. Nội dung đã đạt được
 
-Nhóm đã hoàn thành ứng dụng **WeatherNow** đáp ứng đề bài mã đề 36 với các kết quả chính:
+Nhóm đã hoàn thành ứng dụng **WeatherNow** theo đúng phạm vi đề bài mã đề 36: **tra cứu thời tiết**, **tìm kiếm địa điểm**, **cảnh báo thông minh**, và **hỗ trợ tư vấn** cho người dùng dựa trên điều kiện thời tiết. Từ kết quả triển khai và kiểm thử giả lập, có thể khẳng định sản phẩm đạt mục tiêu tối thiểu của bài tập lớn, đồng thời có thêm các điểm nhấn nâng cao (AI, notification, giao diện động ngày/đêm).
 
-1. **Ứng dụng Flutter đa nền tảng** với ba màn hình: Trang chủ, Tìm kiếm, Thông báo; điều hướng bottom tab ổn định bằng `IndexedStack`.
-2. **Tích hợp OpenWeatherMap** tra cứu thời tiết thực tế theo tên thành phố, tiếng Việt, đơn vị metric.
-3. **Giao diện hiện đại:** glass card, gradient ngày/đêm, custom painter, animation, haptic.
-4. **Cảnh báo thông minh:** cấu hình lưu cục bộ, thông báo khi mưa lớn/dông, lên lịch chào buổi sáng 7:00.
-5. **Trợ lý AI Gemini** tư vấn theo ngữ cảnh thời tiết bằng tiếng Việt.
-6. **Tài liệu dự án:** mô tả chức năng, mockup, báo cáo thiết kế backend, mã nguồn trên GitHub.
+Về mặt kỹ thuật, nhóm đã xây dựng được một ứng dụng di động theo hướng **tách lớp rõ ràng** (View → Controller → Service/Model), giúp mã nguồn dễ đọc, dễ mở rộng, và thuận lợi khi thuyết trình vấn đáp. Việc lựa chọn **Flutter/Dart** cho phép phát triển một codebase thống nhất, đồng thời các thư viện như **GetX**, **http**, **shared_preferences**, **flutter_local_notifications** hỗ trợ triển khai nhanh các yêu cầu quan trọng: quản lý trạng thái, gọi API, lưu cấu hình, và gửi/lên lịch thông báo.
 
-Qua quá trình thực hiện, nhóm củng cố kiến thức về kiến trúc tách lớp, REST API, quản lý trạng thái GetX, thông báo cục bộ và tích hợp AI vào sản phẩm di động.
+Các kết quả nổi bật đã đạt được gồm:
+
+1. **Ứng dụng Flutter đa nền tảng** với 3 màn hình chính (Trang chủ, Tìm kiếm, Thông báo) và điều hướng bottom tab ổn định bằng `IndexedStack`, giúp giữ state khi chuyển tab.
+2. **Tích hợp OpenWeatherMap API** để lấy thời tiết theo thành phố, hiển thị thông tin ở đơn vị metric và mô tả tiếng Việt; có xử lý lỗi và timeout nhằm tăng tính ổn định khi mạng yếu.
+3. **Thiết kế UI/UX hoàn chỉnh**: gradient ngày/đêm, glassmorphism, icon theo điều kiện thời tiết, animation/transition và haptic feedback giúp trải nghiệm mượt và trực quan.
+4. **Hệ thống cảnh báo và nhắc nhở**: người dùng bật/tắt từng loại cảnh báo, lưu cấu hình bằng SharedPreferences; thông báo tức thời khi gặp điều kiện mưa lớn/dông; lên lịch “Chào ngày mới” lúc 7:00.
+5. **Trợ lý AI Gemini**: hỗ trợ hỏi đáp tiếng Việt, có ngữ cảnh thời tiết hiện tại (nhiệt độ, độ ẩm, mô tả), đưa ra khuyến nghị về hoạt động, sức khỏe, trang phục.
+6. **Tài liệu & minh chứng đầy đủ**: mô tả chức năng, mockup, báo cáo thiết kế backend tham khảo, checklist theo phiếu chấm, danh mục bảng/hình và link mã nguồn GitHub.
+
+Về kỹ năng, nhóm rút ra các bài học quan trọng:
+
+- **Quản lý API và lỗi mạng**: cần có timeout, phân loại lỗi (không có mạng/404/5xx) và phản hồi UI rõ ràng để người dùng không bị “màn hình trắng”.
+- **Thiết kế trạng thái và luồng dữ liệu**: việc chọn GetX giúp giảm boilerplate, tuy nhiên cần quy ước rõ nơi đặt state và tránh tạo controller chồng chéo.
+- **Tính thực tiễn của notification**: ngoài code, việc xin quyền hệ thống (Android 13+), hành vi tối ưu pin và lịch thông báo là các yếu tố phải đưa vào kịch bản kiểm thử và thuyết trình.
+- **Tính mở rộng**: nếu dự án phát triển thành sản phẩm thật, cần có giải pháp bảo vệ API key và quản lý quota bằng backend trung gian.
 
 ## 2. Nội dung có thể cải tiến
 
@@ -946,6 +955,15 @@ Qua quá trình thực hiện, nhóm củng cố kiến thức về kiến trúc
 | Widget & Wear OS | Hiển thị nhanh trên màn hình chính điện thoại |
 | Kiểm thử tự động | Unit test `WeatherInfo.fromJson`, widget test màn hình |
 | Bảo mật | `--dart-define`, không commit API key; obfuscation bản release |
+
+Ngoài các hướng cải tiến nêu trên, nhóm đề xuất thêm một số hướng phát triển theo mức độ ưu tiên:
+
+- **Ưu tiên 1 — Dự báo “thật” thay cho dữ liệu mẫu**: hiện dự báo theo giờ/tuần một phần dựa trên `WeatherData`. Có thể tích hợp Forecast API/One Call để đồng bộ dự báo với địa điểm người dùng chọn.
+- **Ưu tiên 2 — GPS và đa ngôn ngữ**: tự động lấy vị trí hiện tại (có xin quyền) và bổ sung lựa chọn ngôn ngữ (vi/en) để tăng khả năng sử dụng.
+- **Ưu tiên 3 — Cá nhân hóa và lịch sử**: lưu lịch sử tìm kiếm vào SharedPreferences/Hive; cho phép ghim thành phố yêu thích, đổi °C/°F, tùy biến ngưỡng cảnh báo.
+- **Ưu tiên 4 — Kiểm thử và phát hành**: thiết lập pipeline CI cơ bản (flutter analyze/test), chuẩn hóa versioning, và chuẩn bị kịch bản demo/ghi hình phục vụ chấm vấn đáp.
+
+Tổng kết lại, **WeatherNow** là sản phẩm bài tập lớn hoàn chỉnh theo đúng yêu cầu đề bài, thể hiện đầy đủ các bước từ phân tích yêu cầu, thiết kế kiến trúc, xây dựng chức năng đến kiểm thử và tài liệu hóa. Các hướng mở rộng đã được xác định rõ ràng, giúp nhóm có thể tiếp tục hoàn thiện nếu triển khai ở quy mô lớn hơn.
 
 ---
 
